@@ -342,6 +342,7 @@ async function takePhoto() {
     takingPhoto = true;
     snapButton.disabled = true;
 
+
     /* =========================
        COUNTDOWN
     ========================= */
@@ -364,85 +365,96 @@ async function takePhoto() {
 
 
     /* =========================
-       EXACT SAME CROP AS PREVIEW
+       CAMERA SIZE
     ========================= */
 
-    const videoWidth = video.videoWidth;
-    const videoHeight = video.videoHeight;
+    const videoWidth =
+        video.videoWidth;
 
-    const containerWidth = video.clientWidth;
-    const containerHeight = video.clientHeight;
+    const videoHeight =
+        video.videoHeight;
 
-    /*
-        CSS uses:
 
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
+    /* =========================
+       FORCE SAME 4:3 CROP
+       AS CAMERA PREVIEW
+    ========================= */
 
-        So we calculate exactly which
-        part of the original camera image
-        is visible in the preview.
-    */
+    const targetRatio = 4 / 3;
 
     const videoRatio =
         videoWidth / videoHeight;
 
-    const containerRatio =
-        containerWidth / containerHeight;
 
-    let sourceX = 0;
-    let sourceY = 0;
-    let sourceWidth = videoWidth;
-    let sourceHeight = videoHeight;
+    let cropWidth;
+    let cropHeight;
+
+    let cropX;
+    let cropY;
 
 
-    if (videoRatio > containerRatio) {
+    if (videoRatio > targetRatio) {
 
         /*
-            Video is wider than preview.
+         Camera is wider than 4:3.
 
-            Crop left + right equally.
+         Keep the full height.
+         Remove equal amounts
+         from left and right.
         */
 
-        sourceWidth =
-            videoHeight * containerRatio;
+        cropHeight =
+            videoHeight;
 
-        sourceX =
-            (videoWidth - sourceWidth) / 2;
+        cropWidth =
+            videoHeight * targetRatio;
+
+        cropX =
+            (videoWidth - cropWidth) / 2;
+
+        cropY = 0;
 
     } else {
 
         /*
-            Video is taller than preview.
+         Camera is taller than 4:3.
 
-            Crop top + bottom equally.
+         Keep the full width.
+         Remove equal amounts
+         from top and bottom.
         */
 
-        sourceHeight =
-            videoWidth / containerRatio;
+        cropWidth =
+            videoWidth;
 
-        sourceY =
-            (videoHeight - sourceHeight) / 2;
+        cropHeight =
+            videoWidth / targetRatio;
+
+        cropX = 0;
+
+        cropY =
+            (videoHeight - cropHeight) / 2;
     }
 
 
     /* =========================
-       CREATE CROPPED PHOTO
+       CREATE PHOTO
     ========================= */
 
-    canvas.width = sourceWidth;
-    canvas.height = sourceHeight;
+    canvas.width =
+        Math.round(cropWidth);
+
+    canvas.height =
+        Math.round(cropHeight);
+
 
     const context =
         canvas.getContext("2d");
 
 
     /*
-        The preview is mirrored with CSS,
-        so mirror the saved photo too.
-        This makes the saved image look
-        EXACTLY like the preview.
+        Mirror the photo because
+        the preview is mirrored.
     */
 
     context.save();
@@ -458,14 +470,22 @@ async function takePhoto() {
     );
 
 
+    /*
+        IMPORTANT:
+        This is the EXACT same
+        center 4:3 crop that the
+        preview shows.
+    */
+
     context.drawImage(
+
         video,
 
-        sourceX,
-        sourceY,
+        cropX,
+        cropY,
 
-        sourceWidth,
-        sourceHeight,
+        cropWidth,
+        cropHeight,
 
         0,
         0,
@@ -473,6 +493,7 @@ async function takePhoto() {
         canvas.width,
         canvas.height
     );
+
 
     context.restore();
 
@@ -487,6 +508,7 @@ async function takePhoto() {
             0.92
         );
 
+
     photos.push(image);
 
 
@@ -497,7 +519,8 @@ async function takePhoto() {
     updateStrip();
 
 
-    countdown.style.display = "none";
+    countdown.style.display =
+        "none";
 
 
     /* =========================
@@ -511,7 +534,8 @@ async function takePhoto() {
         snapButton.textContent =
             `Take photo ${photos.length + 1}/4`;
 
-        snapButton.disabled = false;
+        snapButton.disabled =
+            false;
 
         status.textContent =
             `${photos.length} of 4 photos taken`;
@@ -524,7 +548,8 @@ async function takePhoto() {
         status.textContent =
             "Your strip is ready ✨";
 
-        downloadButton.disabled = false;
+        downloadButton.disabled =
+            false;
 
         filtersContainer.classList.add(
             "ready"
@@ -534,7 +559,6 @@ async function takePhoto() {
 
     takingPhoto = false;
 }
-
 
 
 /* =====================================================
