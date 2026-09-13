@@ -45,7 +45,6 @@ const filterButtons =
     document.querySelectorAll(".filter-button");
 
 
-
 /* =====================================================
    STATE
 ===================================================== */
@@ -59,7 +58,6 @@ let takingPhoto = false;
 let currentFilter = "original";
 
 
-
 /* =====================================================
    FILTERS
 ===================================================== */
@@ -70,7 +68,6 @@ const filterSettings = {
         css: "none"
     },
 
-
     vintage: {
         css:
             "sepia(0.45) " +
@@ -78,13 +75,11 @@ const filterSettings = {
             "saturate(0.75)"
     },
 
-
     bw: {
         css:
             "grayscale(1) " +
             "contrast(1.08)"
     },
-
 
     warm: {
         css:
@@ -93,18 +88,12 @@ const filterSettings = {
             "contrast(0.95)"
     },
 
-
     cool: {
         css:
             "saturate(0.85) " +
             "hue-rotate(12deg) " +
             "contrast(1.05)"
     },
-
-
-    /*
-       Retro digital photobooth look
-    */
 
     photobooth: {
         css:
@@ -115,7 +104,6 @@ const filterSettings = {
     }
 
 };
-
 
 
 /* =====================================================
@@ -129,7 +117,6 @@ function showError(message) {
 
     error.style.display =
         "block";
-
 }
 
 
@@ -137,9 +124,7 @@ function clearError() {
 
     error.style.display =
         "none";
-
 }
-
 
 
 /* =====================================================
@@ -149,7 +134,6 @@ function clearError() {
 function updateStrip() {
 
     strip.innerHTML = "";
-
 
     for (
         let i = 0;
@@ -162,16 +146,13 @@ function updateStrip() {
             const image =
                 document.createElement("img");
 
-
             image.src =
                 photos[i];
-
 
             image.style.filter =
                 filterSettings[
                     currentFilter
                 ].css;
-
 
             strip.appendChild(
                 image
@@ -184,42 +165,31 @@ function updateStrip() {
             const empty =
                 document.createElement("div");
 
-
             empty.className =
                 "empty-photo";
-
 
             empty.textContent =
                 `PHOTO ${i + 1}`;
 
-
             strip.appendChild(
                 empty
             );
-
         }
-
     }
-
 
     const label =
         document.createElement("div");
 
-
     label.className =
         "strip-label";
 
-
     label.textContent =
-        "SNAPSTRIP • 2026";
-
+        "charlie • 2026";
 
     strip.appendChild(
         label
     );
-
 }
-
 
 
 /* =====================================================
@@ -229,7 +199,6 @@ function updateStrip() {
 async function startCamera() {
 
     clearError();
-
 
     try {
 
@@ -241,9 +210,7 @@ async function startCamera() {
             throw new Error(
                 "Camera access is not supported."
             );
-
         }
-
 
         cameraStream =
             await navigator.mediaDevices
@@ -267,18 +234,14 @@ async function startCamera() {
 
                 });
 
-
         video.srcObject =
             cameraStream;
 
-
         status.textContent =
-            "Camera ready";
-
+            "okayyy, we're ready ✨";
 
         startButton.disabled =
             true;
-
 
         snapButton.disabled =
             false;
@@ -289,21 +252,16 @@ async function startCamera() {
 
         console.error(err);
 
-
         showError(
             "Could not access the camera. " +
             "Please allow camera permission " +
             "and use HTTPS or localhost."
         );
 
-
         status.textContent =
             "Camera unavailable";
-
     }
-
 }
-
 
 
 /* =====================================================
@@ -319,9 +277,7 @@ function wait(milliseconds) {
                 milliseconds
             )
     );
-
 }
-
 
 
 /* =====================================================
@@ -337,17 +293,15 @@ async function takePhoto() {
         return;
     }
 
-
     takingPhoto = true;
 
     snapButton.disabled =
         true;
 
 
-
-    /*
-       Countdown
-    */
+    /* =================================================
+       COUNTDOWN
+    ================================================= */
 
     for (
         let number = 3;
@@ -362,9 +316,7 @@ async function takePhoto() {
             number;
 
         await wait(700);
-
     }
-
 
     countdown.textContent =
         "📸";
@@ -372,49 +324,55 @@ async function takePhoto() {
     await wait(180);
 
 
+    /* =================================================
+       CREATE PHOTO
+    ================================================= */
+
+    const videoWidth =
+        video.videoWidth;
+
+    const videoHeight =
+        video.videoHeight;
+
 
     /*
-       Canvas
+       Keep the REAL camera ratio.
+
+       We do not force the image to 1:1.
+       We use the actual video dimensions.
     */
 
     canvas.width =
-        video.videoWidth;
-
+        videoWidth;
 
     canvas.height =
-        video.videoHeight;
+        videoHeight;
 
 
     const context =
         canvas.getContext("2d");
 
 
-
     /*
        IMPORTANT:
-       Do NOT mirror the actual photo.
 
-       The video preview is mirrored with CSS,
-       but the saved photo is drawn normally.
+       The preview is mirrored with CSS.
+
+       The saved photo is NOT mirrored.
     */
 
     context.drawImage(
-
         video,
-
         0,
         0,
-
-        canvas.width,
-        canvas.height
-
+        videoWidth,
+        videoHeight
     );
 
 
-
-    /*
-       Save ORIGINAL photo
-    */
+    /* =================================================
+       SAVE ORIGINAL PHOTO
+    ================================================= */
 
     const image =
         canvas.toDataURL(
@@ -422,73 +380,58 @@ async function takePhoto() {
             0.92
         );
 
+    photos.push(
+        image
+    );
 
-    photos.push(image);
 
-
-
-    /*
-       Update strip
-    */
+    /* =================================================
+       UPDATE STRIP
+    ================================================= */
 
     updateStrip();
-
 
     countdown.style.display =
         "none";
 
 
-
-    /*
-       Progress
-    */
+    /* =================================================
+       PROGRESS
+    ================================================= */
 
     if (
         photos.length < 4
     ) {
 
         snapButton.textContent =
-            `Take photo ${photos.length + 1}/4`;
-
+            `photo ${photos.length + 1}/4 📸`;
 
         snapButton.disabled =
             false;
 
-
         status.textContent =
-            `${photos.length} of 4 photos taken`;
+            `${photos.length}/4 ... looking cute ♡`;
 
     }
 
     else {
 
         snapButton.textContent =
-            "Strip complete";
-
+            "we got the pics ♡";
 
         status.textContent =
-            "Your strip is ready ✨";
-
+            "okay Charlie, that's actually cute ✨";
 
         downloadButton.disabled =
             false;
 
-
-        /*
-           Enable filters
-        */
-
         filtersContainer.classList.add(
             "ready"
         );
-
     }
 
-
     takingPhoto = false;
-
 }
-
 
 
 /* =====================================================
@@ -501,34 +444,20 @@ function applyFilter(filterName) {
         filterName;
 
 
-    /*
-       Update active button
-    */
-
     filterButtons.forEach(
         button => {
 
             button.classList.toggle(
-
                 "active",
-
                 button.dataset.filter ===
                 filterName
-
             );
-
         }
     );
 
 
-    /*
-       Re-render strip
-    */
-
     updateStrip();
-
 }
-
 
 
 /* =====================================================
@@ -543,72 +472,154 @@ function reset() {
         "original";
 
 
-    /*
-       Reset strip
-    */
-
     updateStrip();
 
-
-    /*
-       Reset filter buttons
-    */
 
     filterButtons.forEach(
         button => {
 
             button.classList.toggle(
-
                 "active",
-
                 button.dataset.filter ===
                 "original"
-
             );
-
         }
     );
 
-
-    /*
-       Disable filters
-    */
 
     filtersContainer.classList.remove(
         "ready"
     );
 
 
-    /*
-       Reset buttons
-    */
-
     snapButton.textContent =
-        "Take photo 1/4";
-
+        "photo 1/4 📸";
 
     snapButton.disabled =
         !cameraStream;
-
 
     downloadButton.disabled =
         true;
 
 
-    /*
-       Reset status
-    */
-
     status.textContent =
         cameraStream
-            ? "Camera ready"
-            : "Camera not started";
+            ? "okayyy, we're ready ✨"
+            : "uhm... camera first?";
 
 
     clearError();
-
 }
 
+
+/* =====================================================
+   DRAW IMAGE WITHOUT STRETCHING
+===================================================== */
+
+function drawImageCover(
+    context,
+    image,
+    x,
+    y,
+    targetWidth,
+    targetHeight
+) {
+
+    /*
+       Source dimensions
+    */
+
+    const sourceWidth =
+        image.naturalWidth;
+
+    const sourceHeight =
+        image.naturalHeight;
+
+
+    /*
+       Source ratio
+    */
+
+    const sourceRatio =
+        sourceWidth /
+        sourceHeight;
+
+
+    /*
+       Target ratio
+    */
+
+    const targetRatio =
+        targetWidth /
+        targetHeight;
+
+
+    let sourceX = 0;
+    let sourceY = 0;
+
+    let cropWidth =
+        sourceWidth;
+
+    let cropHeight =
+        sourceHeight;
+
+
+    /*
+       If source is wider than target:
+       crop the left/right.
+
+       If source is taller than target:
+       crop the top/bottom.
+    */
+
+    if (
+        sourceRatio > targetRatio
+    ) {
+
+        cropWidth =
+            sourceHeight *
+            targetRatio;
+
+        sourceX =
+            (sourceWidth - cropWidth) / 2;
+
+    }
+
+    else if (
+        sourceRatio < targetRatio
+    ) {
+
+        cropHeight =
+            sourceWidth /
+            targetRatio;
+
+        sourceY =
+            (sourceHeight - cropHeight) / 2;
+    }
+
+
+    /*
+       Draw the image using the crop.
+
+       This NEVER stretches the original image.
+    */
+
+    context.drawImage(
+        image,
+
+        sourceX,
+        sourceY,
+
+        cropWidth,
+        cropHeight,
+
+        x,
+        y,
+
+        targetWidth,
+        targetHeight
+    );
+}
 
 
 /* =====================================================
@@ -624,43 +635,47 @@ function downloadStrip() {
     }
 
 
-
-    /*
-       Dimensions
-    */
+    /* =================================================
+       STRIP DIMENSIONS
+    ================================================= */
 
     const width =
         900;
 
+    const photoWidth =
+        width - 84;
+
+    /*
+       4:3 target ratio.
+
+       The downloaded photos therefore have
+       the same visual ratio as the camera.
+    */
 
     const photoHeight =
-        675;
-
+        Math.round(
+            photoWidth * 3 / 4
+        );
 
     const padding =
         42;
 
-
     const gap =
         24;
-
 
     const labelHeight =
         72;
 
 
-
-    /*
-       Output canvas
-    */
+    /* =================================================
+       OUTPUT CANVAS
+    ================================================= */
 
     const output =
         document.createElement("canvas");
 
-
     output.width =
         width;
-
 
     output.height =
         padding +
@@ -670,39 +685,32 @@ function downloadStrip() {
         padding;
 
 
-
     const context =
         output.getContext("2d");
 
 
-
-    /*
-       White background
-    */
+    /* =================================================
+       WHITE BACKGROUND
+    ================================================= */
 
     context.fillStyle =
         "#ffffff";
 
-
     context.fillRect(
-
         0,
         0,
         output.width,
         output.height
-
     );
-
 
 
     let loadedImages =
         0;
 
 
-
-    /*
-       Load photos
-    */
+    /* =================================================
+       LOAD PHOTOS
+    ================================================= */
 
     photos.forEach(
         (photo, index) => {
@@ -732,12 +740,18 @@ function downloadStrip() {
 
 
                     /*
-                       Draw photo
+                       Draw with COVER logic.
 
-                       No mirroring here either.
+                       The source photo keeps
+                       its original ratio.
+
+                       Any excess is cropped.
+
+                       NOTHING gets stretched.
                     */
 
-                    context.drawImage(
+                    drawImageCover(
+                        context,
 
                         image,
 
@@ -747,11 +761,9 @@ function downloadStrip() {
                         index *
                         (photoHeight + gap),
 
-                        width -
-                        padding * 2,
+                        photoWidth,
 
                         photoHeight
-
                     );
 
 
@@ -765,10 +777,9 @@ function downloadStrip() {
                     loadedImages++;
 
 
-
-                    /*
-                       All four loaded
-                    */
+                    /* =================================
+                       ALL PHOTOS LOADED
+                    ================================= */
 
                     if (
                         loadedImages === 4
@@ -781,25 +792,19 @@ function downloadStrip() {
                         context.fillStyle =
                             "#77706a";
 
-
                         context.font =
                             "600 24px system-ui";
-
 
                         context.textAlign =
                             "center";
 
-
                         context.fillText(
-
-                            "SNAPSTRIP • 2026",
+                            "charlie • 2026",
 
                             width / 2,
 
                             output.height - 34
-
                         );
-
 
 
                         /*
@@ -808,11 +813,8 @@ function downloadStrip() {
 
                         const imageURL =
                             output.toDataURL(
-
                                 "image/jpeg",
-
                                 0.95
-
                             );
 
 
@@ -825,30 +827,22 @@ function downloadStrip() {
                                 "a"
                             );
 
-
                         link.download =
-                            `snapstrip-${currentFilter}.jpg`;
-
+                            `charlie-photobooth-${currentFilter}.jpg`;
 
                         link.href =
                             imageURL;
 
-
                         link.click();
-
                     }
-
                 };
 
 
             image.src =
                 photo;
-
         }
     );
-
 }
-
 
 
 /* =====================================================
@@ -860,24 +854,20 @@ startButton.addEventListener(
     startCamera
 );
 
-
 snapButton.addEventListener(
     "click",
     takePhoto
 );
-
 
 resetButton.addEventListener(
     "click",
     reset
 );
 
-
 downloadButton.addEventListener(
     "click",
     downloadStrip
 );
-
 
 
 /*
@@ -902,7 +892,6 @@ filterButtons.forEach(
 );
 
 
-
 /* =====================================================
    CLEANUP
 ===================================================== */
@@ -919,7 +908,6 @@ window.addEventListener(
                     track =>
                         track.stop()
                 );
-
         }
 
     }
