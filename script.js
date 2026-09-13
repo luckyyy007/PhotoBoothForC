@@ -226,108 +226,6 @@ function updateStrip() {
    START CAMERA
 ===================================================== */
 
-async function startCamera() {
-
-    clearError();
-
-
-    try {
-
-        if (
-            !navigator.mediaDevices ||
-            !navigator.mediaDevices.getUserMedia
-        ) {
-
-            throw new Error(
-                "Camera access is not supported."
-            );
-
-        }
-
-
-        cameraStream =
-            await navigator.mediaDevices
-                .getUserMedia({
-
-                    video: {
-
-                        facingMode: "user",
-
-                        width: {
-                            ideal: 1280
-                        },
-
-                        height: {
-                            ideal: 960
-                        }
-
-                    },
-
-                    audio: false
-
-                });
-
-
-        video.srcObject =
-            cameraStream;
-
-
-        status.textContent =
-            "Camera ready";
-
-
-        startButton.disabled =
-            true;
-
-
-        snapButton.disabled =
-            false;
-
-    }
-
-    catch (err) {
-
-        console.error(err);
-
-
-        showError(
-            "Could not access the camera. " +
-            "Please allow camera permission " +
-            "and use HTTPS or localhost."
-        );
-
-
-        status.textContent =
-            "Camera unavailable";
-
-    }
-
-}
-
-
-
-/* =====================================================
-   WAIT
-===================================================== */
-
-function wait(milliseconds) {
-
-    return new Promise(
-        resolve =>
-            setTimeout(
-                resolve,
-                milliseconds
-            )
-    );
-
-}
-
-
-
-/* =====================================================
-   TAKE PHOTO
-===================================================== */
-
 async function takePhoto() {
 
     if (
@@ -337,17 +235,12 @@ async function takePhoto() {
         return;
     }
 
-
     takingPhoto = true;
+    snapButton.disabled = true;
 
-    snapButton.disabled =
-        true;
-
-
-
-    /*
-       Countdown
-    */
+    /* =========================
+       COUNTDOWN
+    ========================= */
 
     for (
         let number = 3;
@@ -355,66 +248,134 @@ async function takePhoto() {
         number--
     ) {
 
-        countdown.style.display =
-            "grid";
-
-        countdown.textContent =
-            number;
+        countdown.style.display = "grid";
+        countdown.textContent = number;
 
         await wait(700);
-
     }
 
-
-    countdown.textContent =
-        "📸";
+    countdown.textContent = "📸";
 
     await wait(180);
 
 
+    /* =========================
+       EXACT SAME CROP AS PREVIEW
+    ========================= */
+
+    const videoWidth = video.videoWidth;
+    const videoHeight = video.videoHeight;
+
+    const containerWidth = video.clientWidth;
+    const containerHeight = video.clientHeight;
 
     /*
-       Canvas
+        CSS uses:
+
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+
+        So we calculate exactly which
+        part of the original camera image
+        is visible in the preview.
     */
 
-    canvas.width =
-        video.videoWidth;
+    const videoRatio =
+        videoWidth / videoHeight;
+
+    const containerRatio =
+        containerWidth / containerHeight;
+
+    let sourceX = 0;
+    let sourceY = 0;
+    let sourceWidth = videoWidth;
+    let sourceHeight = videoHeight;
 
 
-    canvas.height =
-        video.videoHeight;
+    if (videoRatio > containerRatio) {
 
+        /*
+            Video is wider than preview.
+
+            Crop left + right equally.
+        */
+
+        sourceWidth =
+            videoHeight * containerRatio;
+
+        sourceX =
+            (videoWidth - sourceWidth) / 2;
+
+    } else {
+
+        /*
+            Video is taller than preview.
+
+            Crop top + bottom equally.
+        */
+
+        sourceHeight =
+            videoWidth / containerRatio;
+
+        sourceY =
+            (videoHeight - sourceHeight) / 2;
+    }
+
+
+    /* =========================
+       CREATE CROPPED PHOTO
+    ========================= */
+
+    canvas.width = sourceWidth;
+    canvas.height = sourceHeight;
 
     const context =
         canvas.getContext("2d");
 
 
-
     /*
-       IMPORTANT:
-       Do NOT mirror the actual photo.
-
-       The video preview is mirrored with CSS,
-       but the saved photo is drawn normally.
+        The preview is mirrored with CSS,
+        so mirror the saved photo too.
+        This makes the saved image look
+        EXACTLY like the preview.
     */
 
-    context.drawImage(
+    context.save();
 
+    context.translate(
+        canvas.width,
+        0
+    );
+
+    context.scale(
+        -1,
+        1
+    );
+
+
+    context.drawImage(
         video,
+
+        sourceX,
+        sourceY,
+
+        sourceWidth,
+        sourceHeight,
 
         0,
         0,
 
         canvas.width,
         canvas.height
-
     );
 
+    context.restore();
 
 
-    /*
-       Save ORIGINAL photo
-    */
+    /* =========================
+       SAVE PHOTO
+    ========================= */
 
     const image =
         canvas.toDataURL(
@@ -422,26 +383,22 @@ async function takePhoto() {
             0.92
         );
 
-
     photos.push(image);
 
 
-
-    /*
-       Update strip
-    */
+    /* =========================
+       UPDATE STRIP
+    ========================= */
 
     updateStrip();
 
 
-    countdown.style.display =
-        "none";
+    countdown.style.display = "none";
 
 
-
-    /*
-       Progress
-    */
+    /* =========================
+       PROGRESS
+    ========================= */
 
     if (
         photos.length < 4
@@ -450,43 +407,28 @@ async function takePhoto() {
         snapButton.textContent =
             `Take photo ${photos.length + 1}/4`;
 
-
-        snapButton.disabled =
-            false;
-
+        snapButton.disabled = false;
 
         status.textContent =
             `${photos.length} of 4 photos taken`;
 
-    }
-
-    else {
+    } else {
 
         snapButton.textContent =
             "Strip complete";
 
-
         status.textContent =
             "Your strip is ready ✨";
 
-
-        downloadButton.disabled =
-            false;
-
-
-        /*
-           Enable filters
-        */
+        downloadButton.disabled = false;
 
         filtersContainer.classList.add(
             "ready"
         );
-
     }
 
 
     takingPhoto = false;
-
 }
 
 
