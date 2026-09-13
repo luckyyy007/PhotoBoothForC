@@ -279,12 +279,13 @@ h1 span {
     width: 100%;
 
     /*
-       VERTICAL CAMERA
+       PHONE PORTRAIT CAMERA
 
-       3:4 = portrait
+       9:16 gives the phone camera
+       a natural vertical frame.
     */
 
-    aspect-ratio: 3 / 4;
+    aspect-ratio: 9 / 16;
 
     overflow: hidden;
 
@@ -311,7 +312,7 @@ video {
     height: 100%;
 
     /*
-       The video fills the portrait frame
+       Fill the vertical phone frame
        without stretching.
     */
 
@@ -620,20 +621,17 @@ video {
         translateY(-3px);
 }
 
-
-/*
-   IMPORTANT:
-
-   Strip images are VERTICAL 3:4,
-   exactly matching the camera.
-*/
-
 .strip img {
     display: block;
 
     width: 100%;
 
-    aspect-ratio: 3 / 4;
+    /*
+       Same 9:16 ratio
+       as the phone camera.
+    */
+
+    aspect-ratio: 9 / 16;
 
     object-fit: cover;
 
@@ -643,11 +641,10 @@ video {
         filter 0.25s ease;
 }
 
-
 .empty-photo {
     width: 100%;
 
-    aspect-ratio: 3 / 4;
+    aspect-ratio: 9 / 16;
 
     background: #eeeae5;
 
