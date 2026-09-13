@@ -225,7 +225,111 @@ function updateStrip() {
 /* =====================================================
    START CAMERA
 ===================================================== */
+/* =====================================================
+   START CAMERA
+===================================================== */
 
+async function startCamera() {
+
+    clearError();
+
+
+    try {
+
+        if (
+            !navigator.mediaDevices ||
+            !navigator.mediaDevices.getUserMedia
+        ) {
+
+            throw new Error(
+                "Camera access is not supported."
+            );
+
+        }
+
+
+        cameraStream =
+            await navigator.mediaDevices
+                .getUserMedia({
+
+                    video: {
+
+                        facingMode: "user",
+
+                        width: {
+                            ideal: 1280
+                        },
+
+                        height: {
+                            ideal: 960
+                        }
+
+                    },
+
+                    audio: false
+
+                });
+
+
+        video.srcObject =
+            cameraStream;
+
+
+        status.textContent =
+            "Camera ready";
+
+
+        startButton.disabled =
+            true;
+
+
+        snapButton.disabled =
+            false;
+
+    }
+
+    catch (err) {
+
+        console.error(err);
+
+
+        showError(
+            "Could not access the camera. " +
+            "Please allow camera permission " +
+            "and use HTTPS or localhost."
+        );
+
+
+        status.textContent =
+            "Camera unavailable";
+
+    }
+
+}
+
+
+
+/* =====================================================
+   WAIT
+===================================================== */
+
+function wait(milliseconds) {
+
+    return new Promise(
+        resolve =>
+            setTimeout(
+                resolve,
+                milliseconds
+            )
+    );
+
+}
+
+
+
+/* =====================================================
+   TAKE PHOTO
+===================================================== */
 async function takePhoto() {
 
     if (
