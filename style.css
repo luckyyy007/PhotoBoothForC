@@ -12,11 +12,9 @@
     box-sizing: border-box;
 }
 
-
 html {
     scroll-behavior: smooth;
 }
-
 
 body {
     margin: 0;
@@ -53,7 +51,6 @@ body {
 }
 
 
-
 /* =========================
    BACKGROUND DECORATION
 ========================= */
@@ -77,10 +74,8 @@ body {
         floatDecoration 5s ease-in-out infinite;
 }
 
-
 .decoration-one {
     top: 9%;
-
     left: 4%;
 
     color: #9bcff0;
@@ -88,10 +83,8 @@ body {
     font-size: 32px;
 }
 
-
 .decoration-two {
     top: 25%;
-
     right: 5%;
 
     color: #e9a8c4;
@@ -101,10 +94,8 @@ body {
     animation-delay: 1s;
 }
 
-
 .decoration-three {
     bottom: 12%;
-
     left: 7%;
 
     color: #e9a8c4;
@@ -114,10 +105,8 @@ body {
     animation-delay: 2s;
 }
 
-
 .decoration-four {
     bottom: 7%;
-
     right: 8%;
 
     color: #9bcff0;
@@ -126,7 +115,6 @@ body {
 
     animation-delay: 3s;
 }
-
 
 @keyframes floatDecoration {
 
@@ -142,9 +130,7 @@ body {
             translateY(-7px)
             rotate(4deg);
     }
-
 }
-
 
 
 /* =========================
@@ -164,7 +150,6 @@ body {
 
     padding: 28px;
 }
-
 
 .card {
     width: min(1080px, 100%);
@@ -198,7 +183,6 @@ body {
 }
 
 
-
 /* =========================
    LEFT SIDE
 ========================= */
@@ -211,11 +195,9 @@ body {
     flex-direction: column;
 }
 
-
 .branding {
     position: relative;
 }
-
 
 .brand {
     font-size: 22px;
@@ -225,11 +207,9 @@ body {
     letter-spacing: -0.04em;
 }
 
-
 .brand span {
     color: #e6a7c2;
 }
-
 
 .tagline {
     margin-top: 3px;
@@ -238,7 +218,6 @@ body {
 
     font-size: 13px;
 }
-
 
 .tiny-decoration {
     margin-top: 28px;
@@ -256,7 +235,6 @@ body {
     opacity: 0.8;
 }
 
-
 h1 {
     margin:
         12px 0 14px;
@@ -271,7 +249,6 @@ h1 {
     letter-spacing: -0.055em;
 }
 
-
 h1 span {
     color: #d98eae;
 
@@ -285,7 +262,6 @@ h1 span {
     font-weight: 500;
 }
 
-
 .intro {
     max-width: 540px;
 
@@ -298,7 +274,6 @@ h1 span {
 }
 
 
-
 /* =========================
    CAMERA
 ========================= */
@@ -308,9 +283,15 @@ h1 span {
 
     width: 100%;
 
-    aspect-ratio: 1 / 1;
+    /*
+       Natural webcam ratio.
 
-    max-height: none;
+       Most webcams return 4:3.
+       The video itself determines
+       the actual image ratio.
+    */
+
+    aspect-ratio: 4 / 3;
 
     overflow: hidden;
 
@@ -330,25 +311,28 @@ h1 span {
         3px solid rgba(255, 255, 255, 0.7);
 }
 
-
 video {
     width: 100%;
 
     height: 100%;
 
+    /*
+       Fill the preview without stretching.
+    */
+
     object-fit: cover;
 
-    /* selfie preview is mirrored */
+    /*
+       Selfie-style mirrored preview.
+    */
 
     transform:
         scaleX(-1);
 }
 
-
 #photoCanvas {
     display: none;
 }
-
 
 
 /* =========================
@@ -371,7 +355,6 @@ video {
     opacity: 0.8;
 }
 
-
 .camera-corner-top {
     top: 13px;
 
@@ -380,7 +363,6 @@ video {
     color: #f3b2ca;
 }
 
-
 .camera-corner-bottom {
     bottom: 50px;
 
@@ -388,7 +370,6 @@ video {
 
     color: #b4ddf4;
 }
-
 
 
 /* =========================
@@ -419,7 +400,6 @@ video {
 }
 
 
-
 /* =========================
    CAMERA STATUS
 ========================= */
@@ -448,7 +428,6 @@ video {
 }
 
 
-
 /* =========================
    ERROR
 ========================= */
@@ -471,7 +450,6 @@ video {
 }
 
 
-
 /* =========================
    BUTTONS
 ========================= */
@@ -485,7 +463,6 @@ video {
 
     margin-top: 16px;
 }
-
 
 .button {
     border: 0;
@@ -508,7 +485,6 @@ video {
         box-shadow 0.2s ease;
 }
 
-
 .button:hover:not(:disabled) {
     transform:
         translateY(-2px);
@@ -518,12 +494,10 @@ video {
         rgba(70, 55, 45, 0.12);
 }
 
-
 .button:active:not(:disabled) {
     transform:
         translateY(0);
 }
-
 
 .button:disabled {
     opacity: 0.4;
@@ -533,25 +507,21 @@ video {
     transform: none;
 }
 
-
 .primary {
     background: #25211e;
 
     color: white;
 }
 
-
 .primary:hover:not(:disabled) {
     background: #3b3530;
 }
-
 
 .secondary {
     background: #eee7df;
 
     color: #332e29;
 }
-
 
 
 /* =========================
@@ -583,7 +553,6 @@ video {
     justify-content: center;
 }
 
-
 .right-decoration {
     position: absolute;
 
@@ -602,7 +571,6 @@ video {
     opacity: 0.75;
 }
 
-
 .right h2 {
     margin:
         0 0 18px;
@@ -611,7 +579,6 @@ video {
 
     letter-spacing: 0.02em;
 }
-
 
 
 /* =========================
@@ -625,7 +592,6 @@ video {
 
     place-items: center;
 }
-
 
 .strip {
     width: 190px;
@@ -652,20 +618,23 @@ video {
         transform 0.3s ease;
 }
 
-
 .strip:hover {
     transform:
         rotate(0deg)
         translateY(-3px);
 }
 
-
 .strip img {
     display: block;
 
     width: 100%;
 
-    aspect-ratio: 1 / 1;
+    /*
+       The strip uses 4:3 photos,
+       matching the camera.
+    */
+
+    aspect-ratio: 4 / 3;
 
     object-fit: cover;
 
@@ -675,11 +644,10 @@ video {
         filter 0.25s ease;
 }
 
-
 .empty-photo {
     width: 100%;
 
-    aspect-ratio: 1 / 1;
+    aspect-ratio: 4 / 3;
 
     background: #eeeae5;
 
@@ -691,7 +659,6 @@ video {
 
     font-size: 11px;
 }
-
 
 .strip-label {
     margin-top: 3px;
@@ -706,7 +673,6 @@ video {
 
     text-transform: uppercase;
 }
-
 
 
 /* =========================
@@ -726,13 +692,11 @@ video {
         opacity 0.25s ease;
 }
 
-
 .filters.ready {
     opacity: 1;
 
     pointer-events: auto;
 }
-
 
 .filter-title {
     margin:
@@ -747,7 +711,6 @@ video {
     font-weight: 700;
 }
 
-
 .filter-buttons {
     display: flex;
 
@@ -759,7 +722,6 @@ video {
 
     flex-wrap: wrap;
 }
-
 
 .filter-button {
     border: 1px solid #d8cfc5;
@@ -787,14 +749,12 @@ video {
         transform 0.2s ease;
 }
 
-
 .filter-button:hover {
     transform:
         translateY(-1px);
 
     background: #e9e1d8;
 }
-
 
 .filter-button.active {
     background: #25211e;
@@ -805,7 +765,6 @@ video {
 }
 
 
-
 /* =========================
    DOWNLOAD
 ========================= */
@@ -813,7 +772,6 @@ video {
 .download-button {
     width: 100%;
 }
-
 
 .privacy-note {
     margin-top: 12px;
@@ -828,7 +786,6 @@ video {
 }
 
 
-
 /* =========================
    MOBILE
 ========================= */
@@ -839,18 +796,15 @@ video {
         padding: 14px;
     }
 
-
     .card {
         grid-template-columns: 1fr;
 
         border-radius: 22px;
     }
 
-
     .left {
         padding: 24px;
     }
-
 
     .right {
         padding:
@@ -862,28 +816,22 @@ video {
             1px solid #e0d7cc;
     }
 
-
     h1 {
         margin-top: 12px;
     }
-
 
     .strip-wrapper {
         min-height: 390px;
     }
 
-
     .strip {
         width: 175px;
     }
 
-
     .background-decoration {
         opacity: 0.25;
     }
-
 }
-
 
 
 /* =========================
@@ -896,7 +844,6 @@ video {
         padding: 0;
     }
 
-
     .card {
         width: 100%;
 
@@ -907,32 +854,26 @@ video {
         border-radius: 0;
     }
 
-
     .left {
         padding: 20px;
     }
-
 
     .right {
         padding:
             28px 20px;
     }
 
-
     h1 {
         font-size: 42px;
     }
-
 
     .controls {
         flex-direction: column;
     }
 
-
     .controls .button {
         width: 100%;
     }
-
 
     .filter-button {
         padding:
@@ -940,5 +881,4 @@ video {
 
         font-size: 10px;
     }
-
 }
