@@ -338,6 +338,8 @@ video {
 
     object-fit: cover;
 
+   object-position: center center;
+
     /* selfie preview is mirrored */
 
     transform:
