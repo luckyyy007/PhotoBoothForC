@@ -1,913 +1,466 @@
-/* =====================================================
-   SNAPSTRIP
-   Digital Photobooth
-===================================================== */
-
-
-/* =====================================================
-   ELEMENTS
-===================================================== */
-
-const video =
-    document.getElementById("video");
-
-const canvas =
-    document.getElementById("photoCanvas");
-
-const countdown =
-    document.getElementById("countdown");
-
-const status =
-    document.getElementById("status");
-
-const error =
-    document.getElementById("error");
-
-const startButton =
-    document.getElementById("start");
-
-const snapButton =
-    document.getElementById("snap");
-
-const resetButton =
-    document.getElementById("reset");
-
-const downloadButton =
-    document.getElementById("download");
-
-const strip =
-    document.getElementById("strip");
-
-const filtersContainer =
-    document.getElementById("filters");
-
-const filterButtons =
-    document.querySelectorAll(".filter-button");
-
-
-
-/* =====================================================
-   STATE
-===================================================== */
+const video = document.getElementById("video");
+const canvas = document.getElementById("photoCanvas");
+const countdown = document.getElementById("countdown");
+const status = document.getElementById("status");
+const error = document.getElementById("error");
+const startButton = document.getElementById("start");
+const snapButton = document.getElementById("snap");
+const resetButton = document.getElementById("reset");
+const downloadButton = document.getElementById("download");
+const strip = document.getElementById("strip");
+const filtersContainer = document.getElementById("filters");
+const filterButtons = document.querySelectorAll(".filter-button");
 
 let cameraStream = null;
-
 let photos = [];
-
 let takingPhoto = false;
-
 let currentFilter = "original";
 
-
-
-/* =====================================================
-   FILTERS
-===================================================== */
-
 const filterSettings = {
-
     original: {
         css: "none"
     },
-
-
     vintage: {
-        css:
-            "sepia(0.45) " +
-            "contrast(0.90) " +
-            "saturate(0.75)"
+        css: "sepia(0.45) contrast(0.90) saturate(0.75)"
     },
-
-
     bw: {
-        css:
-            "grayscale(1) " +
-            "contrast(1.08)"
+        css: "grayscale(1) contrast(1.08)"
     },
-
-
     warm: {
-        css:
-            "sepia(0.25) " +
-            "saturate(1.25) " +
-            "contrast(0.95)"
+        css: "sepia(0.25) saturate(1.25) contrast(0.95)"
     },
-
-
     cool: {
-        css:
-            "saturate(0.85) " +
-            "hue-rotate(12deg) " +
-            "contrast(1.05)"
+        css: "saturate(0.85) hue-rotate(12deg) contrast(1.05)"
     },
-
-
-    /*
-       Retro digital photobooth look
-    */
-
     photobooth: {
-        css:
-            "sepia(0.16) " +
-            "saturate(0.82) " +
-            "contrast(1.12) " +
-            "brightness(1.04)"
+        css: "sepia(0.16) saturate(0.82) contrast(1.12) brightness(1.04)"
     }
-
 };
 
 
-
-/* =====================================================
-   ERROR HANDLING
-===================================================== */
-
-function showError(message) {
-
-    error.textContent =
-        message;
-
-    error.style.display =
-        "block";
-
-}
-
-
-function clearError() {
-
-    error.style.display =
-        "none";
-
-}
-
-
-
-/* =====================================================
-   UPDATE STRIP
-===================================================== */
-
-function updateStrip() {
-
-    strip.innerHTML = "";
-
-
-    for (
-        let i = 0;
-        i < 4;
-        i++
-    ) {
-
-        if (photos[i]) {
-
-            const image =
-                document.createElement("img");
-
-
-            image.src =
-                photos[i];
-
-
-            image.style.filter =
-                filterSettings[
-                    currentFilter
-                ].css;
-
-
-            strip.appendChild(
-                image
-            );
-
-        }
-
-        else {
-
-            const empty =
-                document.createElement("div");
-
-
-            empty.className =
-                "empty-photo";
-
-
-            empty.textContent =
-                `PHOTO ${i + 1}`;
-
-
-            strip.appendChild(
-                empty
-            );
-
-        }
-
-    }
-
-
-    const label =
-        document.createElement("div");
-
-
-    label.className =
-        "strip-label";
-
-
-    label.textContent =
-        "SNAPSTRIP • 2026";
-
-
-    strip.appendChild(
-        label
-    );
-
-}
-
-
-
-/* =====================================================
-   START CAMERA
-===================================================== */
+/* =========================
+   CAMERA
+========================= */
 
 async function startCamera() {
-
-    clearError();
-
-
     try {
+        error.textContent = "";
 
-        if (
-            !navigator.mediaDevices ||
-            !navigator.mediaDevices.getUserMedia
-        ) {
+        cameraStream = await navigator.mediaDevices.getUserMedia({
+            video: {
+                facingMode: "user",
+                width: {
+                    ideal: 1280
+                },
+                height: {
+                    ideal: 960
+                }
+            },
+            audio: false
+        });
 
-            throw new Error(
-                "Camera access is not supported."
-            );
+        video.srcObject = cameraStream;
 
-        }
+        await video.play();
 
+        status.textContent = "Camera ready";
+        startButton.disabled = true;
+        snapButton.disabled = false;
 
-        cameraStream =
-            await navigator.mediaDevices
-                .getUserMedia({
-
-                    video: {
-
-                        facingMode: "user",
-
-                        width: {
-                            ideal: 1280
-                        },
-
-                        height: {
-                            ideal: 960
-                        }
-
-                    },
-
-                    audio: false
-
-                });
-
-
-        video.srcObject =
-            cameraStream;
-
-
-        status.textContent =
-            "Camera ready";
-
-
-        startButton.disabled =
-            true;
-
-
-        snapButton.disabled =
-            false;
-
-    }
-
-    catch (err) {
-
+    } catch (err) {
         console.error(err);
 
-
-        showError(
-            "Could not access the camera. " +
-            "Please allow camera permission " +
-            "and use HTTPS or localhost."
-        );
-
-
-        status.textContent =
-            "Camera unavailable";
-
+        error.textContent =
+            "Could not access the camera. Please allow camera access.";
+        status.textContent = "Camera unavailable";
     }
-
 }
 
 
-
-/* =====================================================
-   WAIT
-===================================================== */
-
-function wait(milliseconds) {
-
-    return new Promise(
-        resolve =>
-            setTimeout(
-                resolve,
-                milliseconds
-            )
-    );
-
-}
-
-
-
-/* =====================================================
+/* =========================
    TAKE PHOTO
-===================================================== */
+========================= */
 
 async function takePhoto() {
-
-    if (
-        takingPhoto ||
-        photos.length >= 4
-    ) {
+    if (takingPhoto || photos.length >= 4) {
         return;
     }
 
-
     takingPhoto = true;
+    snapButton.disabled = true;
 
-    snapButton.disabled =
-        true;
+    /* Countdown */
 
-
-
-    /*
-       Countdown
-    */
-
-    for (
-        let number = 3;
-        number > 0;
-        number--
-    ) {
-
-        countdown.style.display =
-            "grid";
-
-        countdown.textContent =
-            number;
+    for (let number = 3; number >= 1; number--) {
+        countdown.textContent = number;
+        countdown.classList.add("show");
 
         await wait(700);
-
     }
 
-
-    countdown.textContent =
-        "📸";
-
+    countdown.textContent = "📸";
     await wait(180);
 
+    /* =========================
+       CANVAS
+       
+       Keep the output at 4:3,
+       matching the camera preview.
+    ========================= */
 
+    canvas.width = 1200;
+    canvas.height = 900;
+
+    const context = canvas.getContext("2d");
 
     /*
-       Canvas
+        The camera preview uses:
+
+            object-fit: cover
+
+        inside a 4:3 container.
+
+        Therefore we must crop the ORIGINAL
+        camera frame before drawing it onto
+        the canvas.
+
+        This makes the saved photo show
+        exactly the same part of the image
+        that is visible in the preview.
     */
 
-    canvas.width =
-        video.videoWidth;
+    const cameraContainer =
+        document.querySelector(".camera-container");
 
+    const previewRatio =
+        cameraContainer.clientWidth /
+        cameraContainer.clientHeight;
 
-    canvas.height =
+    const videoRatio =
+        video.videoWidth /
         video.videoHeight;
 
-
-    const context =
-        canvas.getContext("2d");
-
-
-
-    /*
-       IMPORTANT:
-       Do NOT mirror the actual photo.
-
-       The video preview is mirrored with CSS,
-       but the saved photo is drawn normally.
-    */
-
-    const videoWidth = video.videoWidth;
-   const videoHeight = video.videoHeight;
-   
-   const containerWidth = video.clientWidth;
-   const containerHeight = video.clientHeight;
-   
-   const videoRatio = videoWidth / videoHeight;
-   const containerRatio = containerWidth / containerHeight;
-   
-   let sourceWidth;
-   let sourceHeight;
-   let sourceX;
-   let sourceY;
-   
-   if (videoRatio > containerRatio) {
-   
-       // Video is wider than the camera preview
-       sourceHeight = videoHeight;
-       sourceWidth = videoHeight * containerRatio;
-   
-       sourceX = (videoWidth - sourceWidth) / 2;
-       sourceY = 0;
-   
-   } else {
-   
-       // Video is taller than the camera preview
-       sourceWidth = videoWidth;
-       sourceHeight = videoWidth / containerRatio;
-   
-       sourceX = 0;
-       sourceY = (videoHeight - sourceHeight) / 2;
-   
-   }
-   
-   context.drawImage(
-       video,
-   
-       sourceX,
-       sourceY,
-       sourceWidth,
-       sourceHeight,
-   
-       0,
-       0,
-       canvas.width,
-       canvas.height
-   );
-
-
+    let sourceWidth = video.videoWidth;
+    let sourceHeight = video.videoHeight;
+    let sourceX = 0;
+    let sourceY = 0;
 
     /*
-       Save ORIGINAL photo
+        Same crop logic as:
+
+            object-fit: cover
     */
+
+    if (videoRatio > previewRatio) {
+        /*
+            Video is wider than the preview.
+
+            Crop left and right.
+        */
+
+        sourceWidth =
+            video.videoHeight * previewRatio;
+
+        sourceX =
+            (video.videoWidth - sourceWidth) / 2;
+
+    } else if (videoRatio < previewRatio) {
+        /*
+            Video is taller than the preview.
+
+            Crop top and bottom.
+        */
+
+        sourceHeight =
+            video.videoWidth / previewRatio;
+
+        sourceY =
+            (video.videoHeight - sourceHeight) / 2;
+    }
+
+    /*
+        Draw exactly the visible preview area
+        into the 4:3 canvas.
+
+        IMPORTANT:
+        We intentionally do NOT mirror the
+        saved photo. The preview is mirrored
+        through CSS, while the saved photo
+        remains normal.
+    */
+
+    context.drawImage(
+        video,
+
+        sourceX,
+        sourceY,
+        sourceWidth,
+        sourceHeight,
+
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+    /* Convert to image */
 
     const image =
-        canvas.toDataURL(
-            "image/jpeg",
-            0.92
-        );
-
+        canvas.toDataURL("image/jpeg", 0.92);
 
     photos.push(image);
 
-
-
-    /*
-       Update strip
-    */
-
     updateStrip();
 
-
-    countdown.style.display =
-        "none";
-
-
-
-    /*
-       Progress
-    */
-
-    if (
-        photos.length < 4
-    ) {
-
-        snapButton.textContent =
-            `Take photo ${photos.length + 1}/4`;
-
-
-        snapButton.disabled =
-            false;
-
-
-        status.textContent =
-            `${photos.length} of 4 photos taken`;
-
-    }
-
-    else {
-
-        snapButton.textContent =
-            "Strip complete";
-
-
-        status.textContent =
-            "Your strip is ready ✨";
-
-
-        downloadButton.disabled =
-            false;
-
-
-        /*
-           Enable filters
-        */
-
-        filtersContainer.classList.add(
-            "ready"
-        );
-
-    }
-
-
-    takingPhoto = false;
-
-}
-
-
-
-/* =====================================================
-   APPLY FILTER
-===================================================== */
-
-function applyFilter(filterName) {
-
-    currentFilter =
-        filterName;
-
-
-    /*
-       Update active button
-    */
-
-    filterButtons.forEach(
-        button => {
-
-            button.classList.toggle(
-
-                "active",
-
-                button.dataset.filter ===
-                filterName
-
-            );
-
-        }
-    );
-
-
-    /*
-       Re-render strip
-    */
-
-    updateStrip();
-
-}
-
-
-
-/* =====================================================
-   RESET
-===================================================== */
-
-function reset() {
-
-    photos = [];
-
-    currentFilter =
-        "original";
-
-
-    /*
-       Reset strip
-    */
-
-    updateStrip();
-
-
-    /*
-       Reset filter buttons
-    */
-
-    filterButtons.forEach(
-        button => {
-
-            button.classList.toggle(
-
-                "active",
-
-                button.dataset.filter ===
-                "original"
-
-            );
-
-        }
-    );
-
-
-    /*
-       Disable filters
-    */
-
-    filtersContainer.classList.remove(
-        "ready"
-    );
-
-
-    /*
-       Reset buttons
-    */
-
-    snapButton.textContent =
-        "Take photo 1/4";
-
-
-    snapButton.disabled =
-        !cameraStream;
-
-
-    downloadButton.disabled =
-        true;
-
-
-    /*
-       Reset status
-    */
+    countdown.classList.remove("show");
 
     status.textContent =
-        cameraStream
-            ? "Camera ready"
-            : "Camera not started";
+        `${photos.length}/4 photos taken`;
 
+    if (photos.length >= 4) {
+        snapButton.disabled = true;
+        downloadButton.disabled = false;
+        filtersContainer.classList.remove("disabled");
+    } else {
+        snapButton.disabled = false;
+    }
 
-    clearError();
-
+    takingPhoto = false;
 }
 
 
+/* =========================
+   UPDATE PHOTO STRIP
+========================= */
 
-/* =====================================================
-   DOWNLOAD STRIP
-===================================================== */
+function updateStrip() {
+    const slots = strip.querySelectorAll(".photo-slot");
+
+    slots.forEach((slot, index) => {
+        slot.innerHTML = "";
+
+        if (photos[index]) {
+            const image = document.createElement("img");
+
+            image.src = photos[index];
+
+            image.style.filter =
+                filterSettings[currentFilter].css;
+
+            slot.appendChild(image);
+        }
+    });
+}
+
+
+/* =========================
+   FILTERS
+========================= */
+
+filterButtons.forEach(button => {
+    button.addEventListener("click", () => {
+        currentFilter =
+            button.dataset.filter;
+
+        filterButtons.forEach(item => {
+            item.classList.remove("active");
+        });
+
+        button.classList.add("active");
+
+        updateStrip();
+    });
+});
+
+
+/* =========================
+   RESET
+========================= */
+
+function resetPhotos() {
+    photos = [];
+    currentFilter = "original";
+
+    const slots = strip.querySelectorAll(".photo-slot");
+
+    slots.forEach(slot => {
+        slot.innerHTML = "";
+    });
+
+    filterButtons.forEach(button => {
+        button.classList.remove("active");
+    });
+
+    const originalButton =
+        document.querySelector(
+            '.filter-button[data-filter="original"]'
+        );
+
+    if (originalButton) {
+        originalButton.classList.add("active");
+    }
+
+    countdown.classList.remove("show");
+
+    status.textContent = cameraStream
+        ? "Camera ready"
+        : "Start the camera";
+
+    downloadButton.disabled = true;
+
+    if (cameraStream) {
+        snapButton.disabled = false;
+    }
+}
+
+
+/* =========================
+   DOWNLOAD PHOTO STRIP
+========================= */
 
 function downloadStrip() {
-
-    if (
-        photos.length !== 4
-    ) {
+    if (photos.length === 0) {
         return;
     }
 
-
-
     /*
-       Dimensions
+        Each photo is 4:3.
+
+        900px wide
+        675px high
     */
 
-    const width =
-        900;
+    const photoWidth = 900;
+    const photoHeight = 675;
 
+    const padding = 30;
+    const gap = 20;
 
-    const photoHeight =
-        675;
+    const outputWidth =
+        photoWidth + padding * 2;
 
+    const outputHeight =
+        padding * 2 +
+        photoHeight * photos.length +
+        gap * (photos.length - 1);
 
-    const padding =
-        42;
-
-
-    const gap =
-        24;
-
-
-    const labelHeight =
-        72;
-
-
-
-    /*
-       Output canvas
-    */
-
-    const output =
+    const outputCanvas =
         document.createElement("canvas");
 
-
-    output.width =
-        width;
-
-
-    output.height =
-        padding +
-        photoHeight * 4 +
-        gap * 3 +
-        labelHeight +
-        padding;
-
-
+    outputCanvas.width = outputWidth;
+    outputCanvas.height = outputHeight;
 
     const context =
-        output.getContext("2d");
-
-
+        outputCanvas.getContext("2d");
 
     /*
-       White background
+        Background
     */
 
-    context.fillStyle =
-        "#ffffff";
-
-
+    context.fillStyle = "#f8f1e8";
     context.fillRect(
-
         0,
         0,
-        output.width,
-        output.height
-
+        outputWidth,
+        outputHeight
     );
 
-
-
-    let loadedImages =
-        0;
-
-
-
     /*
-       Load photos
+        Draw every photo
     */
 
-    photos.forEach(
-        (photo, index) => {
+    let y = padding;
 
-            const image =
-                new Image();
+    photos.forEach(photo => {
+        const image =
+            new Image();
 
+        image.src = photo;
 
-            image.onload =
-                () => {
+        /*
+            Wait for image loading.
+            Because this function can be
+            called after the images are
+            already loaded, onload handles
+            both cases safely.
+        */
 
-                    /*
-                       Save canvas state
-                    */
+        image.onload = () => {
+            context.save();
 
-                    context.save();
+            context.filter =
+                filterSettings[currentFilter].css;
 
+            context.drawImage(
+                image,
+                padding,
+                y,
+                photoWidth,
+                photoHeight
+            );
 
-                    /*
-                       Apply selected filter
-                    */
+            context.restore();
 
-                    context.filter =
-                        filterSettings[
-                            currentFilter
-                        ].css;
+            y += photoHeight + gap;
 
+            /*
+                Only download after the final
+                photo has been drawn.
+            */
 
-                    /*
-                       Draw photo
+            if (y >=
+                padding +
+                photoHeight * photos.length +
+                gap * (photos.length - 1)) {
 
-                       No mirroring here either.
-                    */
+                const link =
+                    document.createElement("a");
 
-                    context.drawImage(
+                link.download =
+                    `snapstrip-${currentFilter}.jpg`;
 
-                        image,
-
-                        padding,
-
-                        padding +
-                        index *
-                        (photoHeight + gap),
-
-                        width -
-                        padding * 2,
-
-                        photoHeight
-
+                link.href =
+                    outputCanvas.toDataURL(
+                        "image/jpeg",
+                        0.92
                     );
 
-
-                    /*
-                       Restore state
-                    */
-
-                    context.restore();
-
-
-                    loadedImages++;
-
-
-
-                    /*
-                       All four loaded
-                    */
-
-                    if (
-                        loadedImages === 4
-                    ) {
-
-                        /*
-                           Label
-                        */
-
-                        context.fillStyle =
-                            "#77706a";
-
-
-                        context.font =
-                            "600 24px system-ui";
-
-
-                        context.textAlign =
-                            "center";
-
-
-                        context.fillText(
-
-                            "SNAPSTRIP • 2026",
-
-                            width / 2,
-
-                            output.height - 34
-
-                        );
-
-
-
-                        /*
-                           Convert to JPEG
-                        */
-
-                        const imageURL =
-                            output.toDataURL(
-
-                                "image/jpeg",
-
-                                0.95
-
-                            );
-
-
-                        /*
-                           Download
-                        */
-
-                        const link =
-                            document.createElement(
-                                "a"
-                            );
-
-
-                        link.download =
-                            `snapstrip-${currentFilter}.jpg`;
-
-
-                        link.href =
-                            imageURL;
-
-
-                        link.click();
-
-                    }
-
-                };
-
-
-            image.src =
-                photo;
-
-        }
-    );
-
+                link.click();
+            }
+        };
+    });
 }
 
 
+/* =========================
+   HELPER
+========================= */
 
-/* =====================================================
-   EVENT LISTENERS
-===================================================== */
+function wait(milliseconds) {
+    return new Promise(resolve => {
+        setTimeout(resolve, milliseconds);
+    });
+}
+
+
+/* =========================
+   BUTTON EVENTS
+========================= */
 
 startButton.addEventListener(
     "click",
     startCamera
 );
 
-
 snapButton.addEventListener(
     "click",
     takePhoto
 );
 
-
 resetButton.addEventListener(
     "click",
-    reset
+    resetPhotos
 );
-
 
 downloadButton.addEventListener(
     "click",
@@ -915,48 +468,10 @@ downloadButton.addEventListener(
 );
 
 
+/* =========================
+   INITIAL STATE
+========================= */
 
-/*
-   Filter buttons
-*/
-
-filterButtons.forEach(
-    button => {
-
-        button.addEventListener(
-            "click",
-            () => {
-
-                applyFilter(
-                    button.dataset.filter
-                );
-
-            }
-        );
-
-    }
-);
-
-
-
-/* =====================================================
-   CLEANUP
-===================================================== */
-
-window.addEventListener(
-    "beforeunload",
-    () => {
-
-        if (cameraStream) {
-
-            cameraStream
-                .getTracks()
-                .forEach(
-                    track =>
-                        track.stop()
-                );
-
-        }
-
-    }
-);
+downloadButton.disabled = true;
+snapButton.disabled = true;
+filtersContainer.classList.add("disabled");
