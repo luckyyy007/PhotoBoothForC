@@ -1,389 +1,926 @@
-const video = document.getElementById("video");
-const canvas = document.getElementById("photoCanvas");
-const ctx = canvas.getContext("2d");
+/* =====================================================
+   SNAPSTRIP
+   Digital Photobooth
+===================================================== */
 
-const start = document.getElementById("start");
-const snap = document.getElementById("snap");
-const reset = document.getElementById("reset");
-const strip = document.getElementById("strip");
-const countdown = document.getElementById("countdown");
-const status = document.getElementById("status");
-const error = document.getElementById("error");
-const download = document.getElementById("download");
 
-const filterButtons = document.querySelectorAll(".filter-button");
+/* =====================================================
+   ELEMENTS
+===================================================== */
 
-const PHOTO_WIDTH = 600;
-const PHOTO_HEIGHT = 800;
+const video =
+    document.getElementById("video");
 
-canvas.width = PHOTO_WIDTH;
-canvas.height = PHOTO_HEIGHT;
+const canvas =
+    document.getElementById("photoCanvas");
 
-let stream = null;
+const countdown =
+    document.getElementById("countdown");
+
+const status =
+    document.getElementById("status");
+
+const error =
+    document.getElementById("error");
+
+const startButton =
+    document.getElementById("start");
+
+const snapButton =
+    document.getElementById("snap");
+
+const resetButton =
+    document.getElementById("reset");
+
+const downloadButton =
+    document.getElementById("download");
+
+const strip =
+    document.getElementById("strip");
+
+const filtersContainer =
+    document.getElementById("filters");
+
+const filterButtons =
+    document.querySelectorAll(".filter-button");
+
+
+
+/* =====================================================
+   STATE
+===================================================== */
+
+let cameraStream = null;
+
 let photos = [];
+
+let takingPhoto = false;
+
 let currentFilter = "original";
 
 
-// CAMERA
-start.addEventListener("click", async () => {
-    try {
-        stream = await navigator.mediaDevices.getUserMedia({
-            video: {
-                facingMode: "user",
-                width: { ideal: 720 },
-                height: { ideal: 960 }
-            },
-            audio: false
-        });
 
-        video.srcObject = stream;
+/* =====================================================
+   FILTERS
+===================================================== */
 
-        await video.play();
+const filterSettings = {
 
-        start.disabled = true;
-        snap.disabled = false;
+    original: {
+        css: "none"
+    },
 
-        status.textContent = "camera ready ♡";
-        error.textContent = "";
 
-    } catch (err) {
-        error.textContent = "camera toestemming nodig :( ♡";
-        console.error(err);
+    vintage: {
+        css:
+            "sepia(0.45) " +
+            "contrast(0.90) " +
+            "saturate(0.75)"
+    },
+
+
+    bw: {
+        css:
+            "grayscale(1) " +
+            "contrast(1.08)"
+    },
+
+
+    warm: {
+        css:
+            "sepia(0.25) " +
+            "saturate(1.25) " +
+            "contrast(0.95)"
+    },
+
+
+    cool: {
+        css:
+            "saturate(0.85) " +
+            "hue-rotate(12deg) " +
+            "contrast(1.05)"
+    },
+
+
+    /*
+       Retro digital photobooth look
+    */
+
+    photobooth: {
+        css:
+            "sepia(0.16) " +
+            "saturate(0.82) " +
+            "contrast(1.12) " +
+            "brightness(1.04)"
     }
-});
+
+};
 
 
-// PHOTO
-snap.addEventListener("click", async () => {
 
-    if (photos.length >= 4) return;
+/* =====================================================
+   ERROR HANDLING
+===================================================== */
 
-    snap.disabled = true;
+function showError(message) {
 
-    // COUNTDOWN
-    for (let i = 3; i > 0; i--) {
-        countdown.textContent = i;
-        countdown.style.display = "grid";
+    error.textContent =
+        message;
 
-        await wait(700);
-    }
+    error.style.display =
+        "block";
 
-    countdown.style.display = "none";
-
-    const photo = capturePhoto();
-
-    photos.push(photo);
-
-    updateStrip();
-
-    if (photos.length < 4) {
-        snap.textContent = `photo ${photos.length + 1}/4 📸`;
-        snap.disabled = false;
-    } else {
-        snap.textContent = "klaar! ♡";
-        status.textContent = "alle foto's zijn klaar ♡";
-        download.disabled = false;
-    }
-});
-
-
-// CAPTURE PORTRAIT PHOTO
-function capturePhoto() {
-
-    const videoWidth = video.videoWidth;
-    const videoHeight = video.videoHeight;
-
-    const scale = Math.min(
-        PHOTO_WIDTH / videoWidth,
-        PHOTO_HEIGHT / videoHeight
-    );
-
-    const width = videoWidth * scale;
-    const height = videoHeight * scale;
-
-    const x = (PHOTO_WIDTH - width) / 2;
-    const y = (PHOTO_HEIGHT - height) / 2;
-
-    // achtergrond
-    ctx.fillStyle = "#000";
-    ctx.fillRect(
-        0,
-        0,
-        PHOTO_WIDTH,
-        PHOTO_HEIGHT
-    );
-
-    // spiegel zoals de preview
-    ctx.save();
-
-    ctx.translate(PHOTO_WIDTH, 0);
-    ctx.scale(-1, 1);
-
-    ctx.drawImage(
-        video,
-        x,
-        y,
-        width,
-        height
-    );
-
-    ctx.restore();
-
-    return canvas.toDataURL(
-        "image/jpeg",
-        0.92
-    );
 }
 
 
-// STRIP
+function clearError() {
+
+    error.style.display =
+        "none";
+
+}
+
+
+
+/* =====================================================
+   UPDATE STRIP
+===================================================== */
+
 function updateStrip() {
 
     strip.innerHTML = "";
 
-    photos.forEach((photo, index) => {
 
-        const img = document.createElement("img");
+    for (
+        let i = 0;
+        i < 4;
+        i++
+    ) {
 
-        img.src = photo;
-        img.alt = `Photo ${index + 1}`;
+        if (photos[i]) {
 
-        applyFilter(img);
-
-        strip.appendChild(img);
-    });
-
-    const label = document.createElement("div");
-
-    label.className = "strip-label";
-    label.textContent = "Charlie's portable photobooth";
-
-    strip.appendChild(label);
-}
+            const image =
+                document.createElement("img");
 
 
-// FILTERS
-filterButtons.forEach(button => {
-
-    button.addEventListener("click", () => {
-
-        filterButtons.forEach(b =>
-            b.classList.remove("active")
-        );
-
-        button.classList.add("active");
-
-        currentFilter =
-            button.dataset.filter;
-
-        updateStrip();
-    });
-});
+            image.src =
+                photos[i];
 
 
-function applyFilter(img) {
-
-    const filters = {
-
-        original: "none",
-
-        vintage:
-            "sepia(0.4) contrast(1.05) saturate(0.8)",
-
-        bw:
-            "grayscale(1)",
-
-        warm:
-            "sepia(0.2) saturate(1.3)",
-
-        cool:
-            "saturate(0.8) hue-rotate(15deg)",
-
-        photobooth:
-            "contrast(1.1) saturate(1.15) sepia(0.12)"
-    };
-
-    img.style.filter =
-        filters[currentFilter] || "none";
-}
+            image.style.filter =
+                filterSettings[
+                    currentFilter
+                ].css;
 
 
-// DOWNLOAD
-download.addEventListener("click", () => {
-
-    if (photos.length !== 4) return;
-
-    const stripCanvas =
-        document.createElement("canvas");
-
-    const width = 600;
-    const photoHeight = 800;
-    const gap = 20;
-    const padding = 30;
-    const labelHeight = 80;
-
-    stripCanvas.width = width;
-
-    stripCanvas.height =
-        padding +
-        (photoHeight * 4) +
-        (gap * 3) +
-        labelHeight +
-        padding;
-
-    const c =
-        stripCanvas.getContext("2d");
-
-    c.fillStyle = "#ffffff";
-
-    c.fillRect(
-        0,
-        0,
-        stripCanvas.width,
-        stripCanvas.height
-    );
-
-    let y = padding;
-
-    photos.forEach(photo => {
-
-        const img = new Image();
-
-        img.onload = () => {
-
-            c.save();
-
-            c.filter =
-                getCanvasFilter();
-
-            c.drawImage(
-                img,
-                0,
-                y,
-                width,
-                photoHeight
+            strip.appendChild(
+                image
             );
 
-            c.restore();
+        }
 
-            y += photoHeight + gap;
+        else {
 
-            if (y >= padding +
-                photoHeight * 4 +
-                gap * 3) {
-
-                c.filter = "none";
-
-                c.font =
-                    "20px Arial";
-
-                c.textAlign = "center";
-
-                c.fillStyle = "#222";
-
-                c.fillText(
-                    "Charlie's portable photobooth ♡",
-                    width / 2,
-                    stripCanvas.height - 35
-                );
-
-                const link =
-                    document.createElement("a");
-
-                link.download =
-                    "charlies-photobooth.jpg";
-
-                link.href =
-                    stripCanvas.toDataURL(
-                        "image/jpeg",
-                        0.95
-                    );
-
-                link.click();
-            }
-        };
-
-        img.src = photo;
-    });
-});
+            const empty =
+                document.createElement("div");
 
 
-function getCanvasFilter() {
+            empty.className =
+                "empty-photo";
 
-    const filters = {
 
-        original: "none",
+            empty.textContent =
+                `PHOTO ${i + 1}`;
 
-        vintage:
-            "sepia(0.4) contrast(1.05) saturate(0.8)",
 
-        bw:
-            "grayscale(1)",
+            strip.appendChild(
+                empty
+            );
 
-        warm:
-            "sepia(0.2) saturate(1.3)",
+        }
 
-        cool:
-            "saturate(0.8) hue-rotate(15deg)",
+    }
 
-        photobooth:
-            "contrast(1.1) saturate(1.15) sepia(0.12)"
-    };
 
-    return filters[currentFilter] || "none";
+    const label =
+        document.createElement("div");
+
+
+    label.className =
+        "strip-label";
+
+
+    label.textContent =
+        "SNAPSTRIP • 2026";
+
+
+    strip.appendChild(
+        label
+    );
+
 }
 
 
-// RESET
-reset.addEventListener("click", () => {
+
+/* =====================================================
+   START CAMERA
+===================================================== */
+
+async function startCamera() {
+
+    clearError();
+
+
+    try {
+
+        if (
+            !navigator.mediaDevices ||
+            !navigator.mediaDevices.getUserMedia
+        ) {
+
+            throw new Error(
+                "Camera access is not supported."
+            );
+
+        }
+
+
+        cameraStream =
+            await navigator.mediaDevices
+                .getUserMedia({
+
+                    video: {
+
+                        facingMode: "user",
+
+                        width: {
+                            ideal: 1280
+                        },
+
+                        height: {
+                            ideal: 960
+                        }
+
+                    },
+
+                    audio: false
+
+                });
+
+
+        video.srcObject =
+            cameraStream;
+
+
+        status.textContent =
+            "Camera ready";
+
+
+        startButton.disabled =
+            true;
+
+
+        snapButton.disabled =
+            false;
+
+    }
+
+    catch (err) {
+
+        console.error(err);
+
+
+        showError(
+            "Could not access the camera. " +
+            "Please allow camera permission " +
+            "and use HTTPS or localhost."
+        );
+
+
+        status.textContent =
+            "Camera unavailable";
+
+    }
+
+}
+
+
+
+/* =====================================================
+   WAIT
+===================================================== */
+
+function wait(milliseconds) {
+
+    return new Promise(
+        resolve =>
+            setTimeout(
+                resolve,
+                milliseconds
+            )
+    );
+
+}
+
+
+
+/* =====================================================
+   TAKE PHOTO
+===================================================== */
+
+async function takePhoto() {
+
+    if (
+        takingPhoto ||
+        photos.length >= 4
+    ) {
+        return;
+    }
+
+
+    takingPhoto = true;
+
+    snapButton.disabled =
+        true;
+
+
+
+    /*
+       Countdown
+    */
+
+    for (
+        let number = 3;
+        number > 0;
+        number--
+    ) {
+
+        countdown.style.display =
+            "grid";
+
+        countdown.textContent =
+            number;
+
+        await wait(700);
+
+    }
+
+
+    countdown.textContent =
+        "📸";
+
+    await wait(180);
+
+
+
+    /*
+       Canvas
+    */
+
+    canvas.width =
+        video.videoWidth;
+
+
+    canvas.height =
+        video.videoHeight;
+
+
+    const context =
+        canvas.getContext("2d");
+
+
+
+    /*
+       IMPORTANT:
+       Do NOT mirror the actual photo.
+
+       The video preview is mirrored with CSS,
+       but the saved photo is drawn normally.
+    */
+
+    context.drawImage(
+
+        video,
+
+        0,
+        0,
+
+        canvas.width,
+        canvas.height
+
+    );
+
+
+
+    /*
+       Save ORIGINAL photo
+    */
+
+    const image =
+        canvas.toDataURL(
+            "image/jpeg",
+            0.92
+        );
+
+
+    photos.push(image);
+
+
+
+    /*
+       Update strip
+    */
+
+    updateStrip();
+
+
+    countdown.style.display =
+        "none";
+
+
+
+    /*
+       Progress
+    */
+
+    if (
+        photos.length < 4
+    ) {
+
+        snapButton.textContent =
+            `Take photo ${photos.length + 1}/4`;
+
+
+        snapButton.disabled =
+            false;
+
+
+        status.textContent =
+            `${photos.length} of 4 photos taken`;
+
+    }
+
+    else {
+
+        snapButton.textContent =
+            "Strip complete";
+
+
+        status.textContent =
+            "Your strip is ready ✨";
+
+
+        downloadButton.disabled =
+            false;
+
+
+        /*
+           Enable filters
+        */
+
+        filtersContainer.classList.add(
+            "ready"
+        );
+
+    }
+
+
+    takingPhoto = false;
+
+}
+
+
+
+/* =====================================================
+   APPLY FILTER
+===================================================== */
+
+function applyFilter(filterName) {
+
+    currentFilter =
+        filterName;
+
+
+    /*
+       Update active button
+    */
+
+    filterButtons.forEach(
+        button => {
+
+            button.classList.toggle(
+
+                "active",
+
+                button.dataset.filter ===
+                filterName
+
+            );
+
+        }
+    );
+
+
+    /*
+       Re-render strip
+    */
+
+    updateStrip();
+
+}
+
+
+
+/* =====================================================
+   RESET
+===================================================== */
+
+function reset() {
 
     photos = [];
 
-    currentFilter = "original";
+    currentFilter =
+        "original";
 
-    strip.innerHTML = `
-        <div class="empty-photo">
-            PHOTO 1
-        </div>
 
-        <div class="empty-photo">
-            PHOTO 2
-        </div>
+    /*
+       Reset strip
+    */
 
-        <div class="empty-photo">
-            PHOTO 3
-        </div>
+    updateStrip();
 
-        <div class="empty-photo">
-            PHOTO 4
-        </div>
 
-        <div class="strip-label">
-            Charlie's portable photobooth
-        </div>
-    `;
+    /*
+       Reset filter buttons
+    */
 
-    snap.textContent = "photo 1/4 📸";
-    snap.disabled = !stream;
+    filterButtons.forEach(
+        button => {
 
-    download.disabled = true;
+            button.classList.toggle(
+
+                "active",
+
+                button.dataset.filter ===
+                "original"
+
+            );
+
+        }
+    );
+
+
+    /*
+       Disable filters
+    */
+
+    filtersContainer.classList.remove(
+        "ready"
+    );
+
+
+    /*
+       Reset buttons
+    */
+
+    snapButton.textContent =
+        "Take photo 1/4";
+
+
+    snapButton.disabled =
+        !cameraStream;
+
+
+    downloadButton.disabled =
+        true;
+
+
+    /*
+       Reset status
+    */
 
     status.textContent =
-        stream ? "camera ready ♡" : "uhm... camera eerst?";
-
-    filterButtons.forEach(b =>
-        b.classList.remove("active")
-    );
-
-    document
-        .querySelector('[data-filter="original"]')
-        .classList.add("active");
-});
+        cameraStream
+            ? "Camera ready"
+            : "Camera not started";
 
 
-// HELPER
-function wait(ms) {
-    return new Promise(
-        resolve => setTimeout(resolve, ms)
-    );
+    clearError();
+
 }
+
+
+
+/* =====================================================
+   DOWNLOAD STRIP
+===================================================== */
+
+function downloadStrip() {
+
+    if (
+        photos.length !== 4
+    ) {
+        return;
+    }
+
+
+
+    /*
+       Dimensions
+    */
+
+    const width =
+        900;
+
+
+    const photoHeight =
+        675;
+
+
+    const padding =
+        42;
+
+
+    const gap =
+        24;
+
+
+    const labelHeight =
+        72;
+
+
+
+    /*
+       Output canvas
+    */
+
+    const output =
+        document.createElement("canvas");
+
+
+    output.width =
+        width;
+
+
+    output.height =
+        padding +
+        photoHeight * 4 +
+        gap * 3 +
+        labelHeight +
+        padding;
+
+
+
+    const context =
+        output.getContext("2d");
+
+
+
+    /*
+       White background
+    */
+
+    context.fillStyle =
+        "#ffffff";
+
+
+    context.fillRect(
+
+        0,
+        0,
+        output.width,
+        output.height
+
+    );
+
+
+
+    let loadedImages =
+        0;
+
+
+
+    /*
+       Load photos
+    */
+
+    photos.forEach(
+        (photo, index) => {
+
+            const image =
+                new Image();
+
+
+            image.onload =
+                () => {
+
+                    /*
+                       Save canvas state
+                    */
+
+                    context.save();
+
+
+                    /*
+                       Apply selected filter
+                    */
+
+                    context.filter =
+                        filterSettings[
+                            currentFilter
+                        ].css;
+
+
+                    /*
+                       Draw photo
+
+                       No mirroring here either.
+                    */
+
+                    context.drawImage(
+
+                        image,
+
+                        padding,
+
+                        padding +
+                        index *
+                        (photoHeight + gap),
+
+                        width -
+                        padding * 2,
+
+                        photoHeight
+
+                    );
+
+
+                    /*
+                       Restore state
+                    */
+
+                    context.restore();
+
+
+                    loadedImages++;
+
+
+
+                    /*
+                       All four loaded
+                    */
+
+                    if (
+                        loadedImages === 4
+                    ) {
+
+                        /*
+                           Label
+                        */
+
+                        context.fillStyle =
+                            "#77706a";
+
+
+                        context.font =
+                            "600 24px system-ui";
+
+
+                        context.textAlign =
+                            "center";
+
+
+                        context.fillText(
+
+                            "SNAPSTRIP • 2026",
+
+                            width / 2,
+
+                            output.height - 34
+
+                        );
+
+
+
+                        /*
+                           Convert to JPEG
+                        */
+
+                        const imageURL =
+                            output.toDataURL(
+
+                                "image/jpeg",
+
+                                0.95
+
+                            );
+
+
+                        /*
+                           Download
+                        */
+
+                        const link =
+                            document.createElement(
+                                "a"
+                            );
+
+
+                        link.download =
+                            `snapstrip-${currentFilter}.jpg`;
+
+
+                        link.href =
+                            imageURL;
+
+
+                        link.click();
+
+                    }
+
+                };
+
+
+            image.src =
+                photo;
+
+        }
+    );
+
+}
+
+
+
+/* =====================================================
+   EVENT LISTENERS
+===================================================== */
+
+startButton.addEventListener(
+    "click",
+    startCamera
+);
+
+
+snapButton.addEventListener(
+    "click",
+    takePhoto
+);
+
+
+resetButton.addEventListener(
+    "click",
+    reset
+);
+
+
+downloadButton.addEventListener(
+    "click",
+    downloadStrip
+);
+
+
+
+/*
+   Filter buttons
+*/
+
+filterButtons.forEach(
+    button => {
+
+        button.addEventListener(
+            "click",
+            () => {
+
+                applyFilter(
+                    button.dataset.filter
+                );
+
+            }
+        );
+
+    }
+);
+
+
+
+/* =====================================================
+   CLEANUP
+===================================================== */
+
+window.addEventListener(
+    "beforeunload",
+    () => {
+
+        if (cameraStream) {
+
+            cameraStream
+                .getTracks()
+                .forEach(
+                    track =>
+                        track.stop()
+                );
+
+        }
+
+    }
+);
