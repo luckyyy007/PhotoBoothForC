@@ -398,17 +398,53 @@ async function takePhoto() {
        but the saved photo is drawn normally.
     */
 
-    context.drawImage(
-
-        video,
-
-        0,
-        0,
-
-        canvas.width,
-        canvas.height
-
-    );
+    const videoWidth = video.videoWidth;
+   const videoHeight = video.videoHeight;
+   
+   const containerWidth = video.clientWidth;
+   const containerHeight = video.clientHeight;
+   
+   const videoRatio = videoWidth / videoHeight;
+   const containerRatio = containerWidth / containerHeight;
+   
+   let sourceWidth;
+   let sourceHeight;
+   let sourceX;
+   let sourceY;
+   
+   if (videoRatio > containerRatio) {
+   
+       // Video is wider than the camera preview
+       sourceHeight = videoHeight;
+       sourceWidth = videoHeight * containerRatio;
+   
+       sourceX = (videoWidth - sourceWidth) / 2;
+       sourceY = 0;
+   
+   } else {
+   
+       // Video is taller than the camera preview
+       sourceWidth = videoWidth;
+       sourceHeight = videoWidth / containerRatio;
+   
+       sourceX = 0;
+       sourceY = (videoHeight - sourceHeight) / 2;
+   
+   }
+   
+   context.drawImage(
+       video,
+   
+       sourceX,
+       sourceY,
+       sourceWidth,
+       sourceHeight,
+   
+       0,
+       0,
+       canvas.width,
+       canvas.height
+   );
 
 
 
