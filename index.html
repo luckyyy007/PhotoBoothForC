@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>SnapStrip — Digital Photobooth</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<div class="app">
+
+    <main class="card">
+
+        <!-- =========================
+             LEFT SIDE
+        ========================== -->
+
+        <section class="left">
+
+            <div class="branding">
+
+                <div class="brand">
+                    snapstrip.
+                </div>
+
+                <div class="tagline">
+                    a tiny digital photobooth
+                </div>
+
+            </div>
+
+
+            <h1>
+                Make a little memory.
+            </h1>
+
+
+            <p class="intro">
+                Take four photos and we'll turn them
+                into a cute photobooth strip you can save.
+            </p>
+
+
+            <!-- CAMERA -->
+
+            <div class="camera-container">
+
+                <video
+                    id="video"
+                    autoplay
+                    playsinline
+                    muted>
+                </video>
+
+                <canvas
+                    id="photoCanvas">
+                </canvas>
+
+
+                <!-- COUNTDOWN -->
+
+                <div
+                    id="countdown"
+                    class="countdown">
+
+                    3
+
+                </div>
+
+
+                <!-- STATUS -->
+
+                <div
+                    id="status"
+                    class="status">
+
+                    Camera not started
+
+                </div>
+
+            </div>
+
+
+            <!-- ERROR -->
+
+            <div
+                id="error"
+                class="error">
+            </div>
+
+
+            <!-- CONTROLS -->
+
+            <div class="controls">
+
+                <button
+                    id="start"
+                    class="button primary">
+
+                    Start camera
+
+                </button>
+
+
+                <button
+                    id="snap"
+                    class="button primary"
+                    disabled>
+
+                    Take photo 1/4
+
+                </button>
+
+
+                <button
+                    id="reset"
+                    class="button secondary">
+
+                    Reset
+
+                </button>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =========================
+             RIGHT SIDE
+        ========================== -->
+
+        <aside class="right">
+
+            <h2>
+                Your strip
+            </h2>
+
+
+            <!-- STRIP -->
+
+            <div class="strip-wrapper">
+
+                <div
+                    id="strip"
+                    class="strip">
+
+                    <div class="empty-photo">
+                        PHOTO 1
+                    </div>
+
+                    <div class="empty-photo">
+                        PHOTO 2
+                    </div>
+
+                    <div class="empty-photo">
+                        PHOTO 3
+                    </div>
+
+                    <div class="empty-photo">
+                        PHOTO 4
+                    </div>
+
+                    <div class="strip-label">
+                        SNAPSTRIP • 2026
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- =========================
+                 FILTERS
+            ========================== -->
+
+            <div
+                id="filters"
+                class="filters">
+
+                <p class="filter-title">
+                    Choose a vibe
+                </p>
+
+
+                <div class="filter-buttons">
+
+                    <button
+                        class="filter-button active"
+                        data-filter="original">
+
+                        Original
+
+                    </button>
+
+
+                    <button
+                        class="filter-button"
+                        data-filter="vintage">
+
+                        Vintage
+
+                    </button>
+
+
+                    <button
+                        class="filter-button"
+                        data-filter="bw">
+
+                        B&W
+
+                    </button>
+
+
+                    <button
+                        class="filter-button"
+                        data-filter="warm">
+
+                        Warm
+
+                    </button>
+
+
+                    <button
+                        class="filter-button"
+                        data-filter="cool">
+
+                        Cool
+
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <!-- DOWNLOAD -->
+
+            <button
+                id="download"
+                class="button primary download-button"
+                disabled>
+
+                Download strip
+
+            </button>
+
+
+            <p class="privacy-note">
+
+                Your photos stay in your browser.<br>
+                No upload or account needed.
+
+            </p>
+
+        </aside>
+
+    </main>
+
+</div>
+
+
+<script src="script.js"></script>
+
+</body>
+</html>
