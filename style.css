@@ -308,7 +308,7 @@ h1 span {
 
     width: 100%;
 
-    aspect-ratio: 4 / 3;
+    aspect-ratio: 3 / 4;
 
     max-height: 470px;
 
@@ -336,12 +336,12 @@ video {
 
     height: 100%;
 
-    object-fit: cover;
+    object-fit: contain;
 
     /* selfie preview is mirrored */
 
     transform:
-        scaleX(-1);
+        scaleX(1);
 }
 
 
