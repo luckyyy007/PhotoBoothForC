@@ -64,13 +64,6 @@ let currentFilter = "original";
    FILTERS
 ===================================================== */
 
-/*
-    CSS filters are used for the live preview.
-
-    The same filters are also applied to the
-    final downloaded canvas.
-*/
-
 const filterSettings = {
 
     original: {
@@ -106,6 +99,19 @@ const filterSettings = {
             "saturate(0.85) " +
             "hue-rotate(12deg) " +
             "contrast(1.05)"
+    },
+
+
+    /*
+       Retro digital photobooth look
+    */
+
+    photobooth: {
+        css:
+            "sepia(0.16) " +
+            "saturate(0.82) " +
+            "contrast(1.12) " +
+            "brightness(1.04)"
     }
 
 };
@@ -142,28 +148,14 @@ function clearError() {
 
 function updateStrip() {
 
-    /*
-        Clear the current strip
-    */
-
     strip.innerHTML = "";
 
-
-
-    /*
-        Create the four photo slots
-    */
 
     for (
         let i = 0;
         i < 4;
         i++
     ) {
-
-        /*
-            If we have a photo,
-            display it.
-        */
 
         if (photos[i]) {
 
@@ -174,11 +166,6 @@ function updateStrip() {
             image.src =
                 photos[i];
 
-
-            /*
-                Apply current filter
-                to the preview.
-            */
 
             image.style.filter =
                 filterSettings[
@@ -191,12 +178,6 @@ function updateStrip() {
             );
 
         }
-
-
-        /*
-            Otherwise show an
-            empty photo slot.
-        */
 
         else {
 
@@ -220,11 +201,6 @@ function updateStrip() {
 
     }
 
-
-
-    /*
-        Add the strip label
-    */
 
     const label =
         document.createElement("div");
@@ -257,11 +233,6 @@ async function startCamera() {
 
     try {
 
-        /*
-            Check whether the browser
-            supports camera access.
-        */
-
         if (
             !navigator.mediaDevices ||
             !navigator.mediaDevices.getUserMedia
@@ -274,29 +245,17 @@ async function startCamera() {
         }
 
 
-
-        /*
-            Ask the user for camera access.
-        */
-
         cameraStream =
             await navigator.mediaDevices
                 .getUserMedia({
 
                     video: {
 
-                        /*
-                            "user" means the
-                            front/selfie camera.
-                        */
-
                         facingMode: "user",
-
 
                         width: {
                             ideal: 1280
                         },
-
 
                         height: {
                             ideal: 960
@@ -304,26 +263,14 @@ async function startCamera() {
 
                     },
 
-
                     audio: false
 
                 });
 
 
-
-        /*
-            Connect camera stream
-            to the video element.
-        */
-
         video.srcObject =
             cameraStream;
 
-
-
-        /*
-            Update UI.
-        */
 
         status.textContent =
             "Camera ready";
@@ -337,7 +284,6 @@ async function startCamera() {
             false;
 
     }
-
 
     catch (err) {
 
@@ -361,7 +307,7 @@ async function startCamera() {
 
 
 /* =====================================================
-   WAIT HELPER
+   WAIT
 ===================================================== */
 
 function wait(milliseconds) {
@@ -384,18 +330,11 @@ function wait(milliseconds) {
 
 async function takePhoto() {
 
-    /*
-        Prevent taking another photo
-        while countdown is running.
-    */
-
     if (
         takingPhoto ||
         photos.length >= 4
     ) {
-
         return;
-
     }
 
 
@@ -406,9 +345,9 @@ async function takePhoto() {
 
 
 
-    /* -----------------------------------------------
-       COUNTDOWN
-    ------------------------------------------------ */
+    /*
+       Countdown
+    */
 
     for (
         let number = 3;
@@ -419,32 +358,24 @@ async function takePhoto() {
         countdown.style.display =
             "grid";
 
-
         countdown.textContent =
             number;
-
 
         await wait(700);
 
     }
 
 
-
-    /*
-        Camera flash indicator
-    */
-
     countdown.textContent =
         "📸";
-
 
     await wait(180);
 
 
 
-    /* -----------------------------------------------
-       CANVAS SETUP
-    ------------------------------------------------ */
+    /*
+       Canvas
+    */
 
     canvas.width =
         video.videoWidth;
@@ -459,14 +390,12 @@ async function takePhoto() {
 
 
 
-    /* -----------------------------------------------
-       MIRROR SELFIE
-    ------------------------------------------------ */
-
-    context.save();
-
     /*
-        Draw current camera frame.
+       IMPORTANT:
+       Do NOT mirror the actual photo.
+
+       The video preview is mirrored with CSS,
+       but the saved photo is drawn normally.
     */
 
     context.drawImage(
@@ -482,23 +411,9 @@ async function takePhoto() {
     );
 
 
-    context.restore();
-
-
-
-    /* -----------------------------------------------
-       SAVE ORIGINAL IMAGE
-    ------------------------------------------------ */
 
     /*
-        IMPORTANT:
-
-        We save the original image here.
-
-        We DON'T permanently apply the filter.
-
-        This allows the user to switch filters
-        as many times as they want.
+       Save ORIGINAL photo
     */
 
     const image =
@@ -512,9 +427,9 @@ async function takePhoto() {
 
 
 
-    /* -----------------------------------------------
-       UPDATE STRIP
-    ------------------------------------------------ */
+    /*
+       Update strip
+    */
 
     updateStrip();
 
@@ -524,18 +439,13 @@ async function takePhoto() {
 
 
 
-    /* -----------------------------------------------
-       UPDATE PROGRESS
-    ------------------------------------------------ */
+    /*
+       Progress
+    */
 
     if (
         photos.length < 4
     ) {
-
-        /*
-            There are still photos
-            left to take.
-        */
 
         snapButton.textContent =
             `Take photo ${photos.length + 1}/4`;
@@ -550,12 +460,7 @@ async function takePhoto() {
 
     }
 
-
     else {
-
-        /*
-            All four photos are done.
-        */
 
         snapButton.textContent =
             "Strip complete";
@@ -569,9 +474,8 @@ async function takePhoto() {
             false;
 
 
-
         /*
-            Enable filters.
+           Enable filters
         */
 
         filtersContainer.classList.add(
@@ -593,18 +497,12 @@ async function takePhoto() {
 
 function applyFilter(filterName) {
 
-    /*
-        Save selected filter.
-    */
-
     currentFilter =
         filterName;
 
 
-
     /*
-        Update which filter button
-        appears selected.
+       Update active button
     */
 
     filterButtons.forEach(
@@ -623,12 +521,8 @@ function applyFilter(filterName) {
     );
 
 
-
     /*
-        Re-render the strip.
-
-        This changes the preview
-        immediately.
+       Re-render strip
     */
 
     updateStrip();
@@ -643,32 +537,21 @@ function applyFilter(filterName) {
 
 function reset() {
 
-    /*
-        Remove all photos.
-    */
-
     photos = [];
-
-
-    /*
-        Reset filter.
-    */
 
     currentFilter =
         "original";
 
 
-
     /*
-        Reset strip.
+       Reset strip
     */
 
     updateStrip();
 
 
-
     /*
-        Reset active filter button.
+       Reset filter buttons
     */
 
     filterButtons.forEach(
@@ -687,10 +570,8 @@ function reset() {
     );
 
 
-
     /*
-        Disable filters until
-        all four photos exist.
+       Disable filters
     */
 
     filtersContainer.classList.remove(
@@ -698,9 +579,8 @@ function reset() {
     );
 
 
-
     /*
-        Reset snap button.
+       Reset buttons
     */
 
     snapButton.textContent =
@@ -711,18 +591,12 @@ function reset() {
         !cameraStream;
 
 
-
-    /*
-        Disable download.
-    */
-
     downloadButton.disabled =
         true;
 
 
-
     /*
-        Reset status.
+       Reset status
     */
 
     status.textContent =
@@ -743,24 +617,17 @@ function reset() {
 
 function downloadStrip() {
 
-    /*
-        Only download when
-        all four photos exist.
-    */
-
     if (
         photos.length !== 4
     ) {
-
         return;
-
     }
 
 
 
-    /* -----------------------------------------------
-       FINAL IMAGE DIMENSIONS
-    ------------------------------------------------ */
+    /*
+       Dimensions
+    */
 
     const width =
         900;
@@ -783,9 +650,9 @@ function downloadStrip() {
 
 
 
-    /* -----------------------------------------------
-       CREATE OUTPUT CANVAS
-    ------------------------------------------------ */
+    /*
+       Output canvas
+    */
 
     const output =
         document.createElement("canvas");
@@ -809,9 +676,9 @@ function downloadStrip() {
 
 
 
-    /* -----------------------------------------------
-       WHITE BACKGROUND
-    ------------------------------------------------ */
+    /*
+       White background
+    */
 
     context.fillStyle =
         "#ffffff";
@@ -833,9 +700,9 @@ function downloadStrip() {
 
 
 
-    /* -----------------------------------------------
-       LOAD PHOTOS
-    ------------------------------------------------ */
+    /*
+       Load photos
+    */
 
     photos.forEach(
         (photo, index) => {
@@ -844,24 +711,18 @@ function downloadStrip() {
                 new Image();
 
 
-
             image.onload =
                 () => {
 
                     /*
-                        Save current canvas state.
+                       Save canvas state
                     */
 
                     context.save();
 
 
-
                     /*
-                        Apply the selected filter.
-
-                        CanvasRenderingContext2D.filter
-                        supports the same CSS filter
-                        syntax we use in the preview.
+                       Apply selected filter
                     */
 
                     context.filter =
@@ -870,9 +731,10 @@ function downloadStrip() {
                         ].css;
 
 
-
                     /*
-                        Draw the filtered image.
+                       Draw photo
+
+                       No mirroring here either.
                     */
 
                     context.drawImage(
@@ -893,29 +755,27 @@ function downloadStrip() {
                     );
 
 
-
                     /*
-                        Restore canvas state.
+                       Restore state
                     */
 
                     context.restore();
-
 
 
                     loadedImages++;
 
 
 
-                    /* --------------------------------
-                       ALL PHOTOS LOADED
-                    -------------------------------- */
+                    /*
+                       All four loaded
+                    */
 
                     if (
                         loadedImages === 4
                     ) {
 
                         /*
-                            Add label underneath.
+                           Label
                         */
 
                         context.fillStyle =
@@ -943,8 +803,7 @@ function downloadStrip() {
 
 
                         /*
-                            Convert final canvas
-                            to JPEG.
+                           Convert to JPEG
                         */
 
                         const imageURL =
@@ -957,10 +816,8 @@ function downloadStrip() {
                             );
 
 
-
                         /*
-                            Create temporary
-                            download link.
+                           Download
                         */
 
                         const link =
@@ -984,7 +841,6 @@ function downloadStrip() {
                 };
 
 
-
             image.src =
                 photo;
 
@@ -999,21 +855,11 @@ function downloadStrip() {
    EVENT LISTENERS
 ===================================================== */
 
-
-/*
-    Start camera
-*/
-
 startButton.addEventListener(
     "click",
     startCamera
 );
 
-
-
-/*
-    Take photo
-*/
 
 snapButton.addEventListener(
     "click",
@@ -1021,21 +867,11 @@ snapButton.addEventListener(
 );
 
 
-
-/*
-    Reset everything
-*/
-
 resetButton.addEventListener(
     "click",
     reset
 );
 
-
-
-/*
-    Download strip
-*/
 
 downloadButton.addEventListener(
     "click",
@@ -1045,7 +881,7 @@ downloadButton.addEventListener(
 
 
 /*
-    Filter buttons
+   Filter buttons
 */
 
 filterButtons.forEach(
@@ -1070,10 +906,6 @@ filterButtons.forEach(
 /* =====================================================
    CLEANUP
 ===================================================== */
-
-/*
-    Stop camera when leaving page.
-*/
 
 window.addEventListener(
     "beforeunload",
