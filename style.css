@@ -1,3 +1,9 @@
+/* =====================================================
+   SNAPSTRIP
+   Dreamy / Retro / Cute
+===================================================== */
+
+
 /* =========================
    RESET
 ========================= */
@@ -26,9 +32,117 @@ body {
         "Segoe UI",
         sans-serif;
 
-    background: #f4efe8;
+    background:
+        radial-gradient(
+            circle at 10% 10%,
+            rgba(190, 225, 255, 0.65),
+            transparent 30%
+        ),
+
+        radial-gradient(
+            circle at 90% 20%,
+            rgba(255, 205, 225, 0.6),
+            transparent 30%
+        ),
+
+        #f7f2ec;
 
     color: #25211e;
+
+    overflow-x: hidden;
+}
+
+
+
+/* =========================
+   BACKGROUND DECORATION
+========================= */
+
+.background-decoration {
+    position: fixed;
+
+    z-index: 0;
+
+    pointer-events: none;
+
+    user-select: none;
+
+    opacity: 0.45;
+
+    font-family:
+        Georgia,
+        serif;
+
+    animation:
+        floatDecoration 5s ease-in-out infinite;
+}
+
+
+.decoration-one {
+    top: 9%;
+
+    left: 4%;
+
+    color: #9bcff0;
+
+    font-size: 32px;
+}
+
+
+.decoration-two {
+    top: 25%;
+
+    right: 5%;
+
+    color: #e9a8c4;
+
+    font-size: 25px;
+
+    animation-delay: 1s;
+}
+
+
+.decoration-three {
+    bottom: 12%;
+
+    left: 7%;
+
+    color: #e9a8c4;
+
+    font-size: 24px;
+
+    animation-delay: 2s;
+}
+
+
+.decoration-four {
+    bottom: 7%;
+
+    right: 8%;
+
+    color: #9bcff0;
+
+    font-size: 30px;
+
+    animation-delay: 3s;
+}
+
+
+@keyframes floatDecoration {
+
+    0%,
+    100% {
+        transform:
+            translateY(0)
+            rotate(0deg);
+    }
+
+    50% {
+        transform:
+            translateY(-7px)
+            rotate(4deg);
+    }
+
 }
 
 
@@ -38,6 +152,10 @@ body {
 ========================= */
 
 .app {
+    position: relative;
+
+    z-index: 1;
+
     min-height: 100vh;
 
     display: grid;
@@ -53,9 +171,11 @@ body {
 
     min-height: 680px;
 
-    background: #fffdf9;
+    background:
+        rgba(255, 253, 249, 0.94);
 
-    border: 1px solid #e6ddd2;
+    border:
+        1px solid rgba(225, 215, 205, 0.8);
 
     border-radius: 28px;
 
@@ -63,12 +183,18 @@ body {
 
     box-shadow:
         0 24px 70px
-        rgba(64, 48, 35, 0.12);
+        rgba(64, 48, 35, 0.12),
+
+        0 4px 15px
+        rgba(120, 150, 180, 0.06);
 
     display: grid;
 
     grid-template-columns:
         1.35fr 0.65fr;
+
+    backdrop-filter:
+        blur(12px);
 }
 
 
@@ -86,12 +212,22 @@ body {
 }
 
 
+.branding {
+    position: relative;
+}
+
+
 .brand {
     font-size: 22px;
 
     font-weight: 800;
 
     letter-spacing: -0.04em;
+}
+
+
+.brand span {
+    color: #e6a7c2;
 }
 
 
@@ -104,9 +240,26 @@ body {
 }
 
 
+.tiny-decoration {
+    margin-top: 28px;
+
+    color: #a7cfe8;
+
+    font-family:
+        Georgia,
+        serif;
+
+    font-size: 13px;
+
+    letter-spacing: 0.4em;
+
+    opacity: 0.8;
+}
+
+
 h1 {
     margin:
-        42px 0 14px;
+        12px 0 14px;
 
     max-width: 600px;
 
@@ -116,6 +269,20 @@ h1 {
     line-height: 0.95;
 
     letter-spacing: -0.055em;
+}
+
+
+h1 span {
+    color: #d98eae;
+
+    font-family:
+        Georgia,
+        "Times New Roman",
+        serif;
+
+    font-style: italic;
+
+    font-weight: 500;
 }
 
 
@@ -154,6 +321,13 @@ h1 {
     display: grid;
 
     place-items: center;
+
+    box-shadow:
+        0 12px 30px
+        rgba(50, 40, 30, 0.12);
+
+    border:
+        3px solid rgba(255, 255, 255, 0.7);
 }
 
 
@@ -164,12 +338,55 @@ video {
 
     object-fit: cover;
 
-   transform: scaleX(-1);
+    /* selfie preview is mirrored */
+
+    transform:
+        scaleX(-1);
 }
 
 
 #photoCanvas {
     display: none;
+}
+
+
+
+/* =========================
+   CAMERA DECORATIONS
+========================= */
+
+.camera-corner {
+    position: absolute;
+
+    z-index: 3;
+
+    pointer-events: none;
+
+    font-family:
+        Georgia,
+        serif;
+
+    font-size: 20px;
+
+    opacity: 0.8;
+}
+
+
+.camera-corner-top {
+    top: 13px;
+
+    right: 15px;
+
+    color: #f3b2ca;
+}
+
+
+.camera-corner-bottom {
+    bottom: 50px;
+
+    right: 15px;
+
+    color: #b4ddf4;
 }
 
 
@@ -285,19 +502,24 @@ video {
     cursor: pointer;
 
     transition:
-        transform 0.2s,
-        opacity 0.2s,
-        background 0.2s;
+        transform 0.2s ease,
+        opacity 0.2s ease,
+        background 0.2s ease,
+        box-shadow 0.2s ease;
 }
 
 
-.button:hover {
+.button:hover:not(:disabled) {
     transform:
-        translateY(-1px);
+        translateY(-2px);
+
+    box-shadow:
+        0 7px 18px
+        rgba(70, 55, 45, 0.12);
 }
 
 
-.button:active {
+.button:active:not(:disabled) {
     transform:
         translateY(0);
 }
@@ -319,6 +541,11 @@ video {
 }
 
 
+.primary:hover:not(:disabled) {
+    background: #3b3530;
+}
+
+
 .secondary {
     background: #eee7df;
 
@@ -332,9 +559,17 @@ video {
 ========================= */
 
 .right {
+    position: relative;
+
     padding: 34px;
 
-    background: #eee7df;
+    background:
+        linear-gradient(
+            145deg,
+            #edf8ff 0%,
+            #f8eef4 55%,
+            #eee7df 100%
+        );
 
     border-left:
         1px solid #e0d7cc;
@@ -349,11 +584,32 @@ video {
 }
 
 
+.right-decoration {
+    position: absolute;
+
+    top: 22px;
+
+    right: 28px;
+
+    color: #e2a8c1;
+
+    font-family:
+        Georgia,
+        serif;
+
+    font-size: 22px;
+
+    opacity: 0.75;
+}
+
+
 .right h2 {
     margin:
         0 0 18px;
 
     font-size: 16px;
+
+    letter-spacing: 0.02em;
 }
 
 
@@ -508,7 +764,8 @@ video {
 .filter-button {
     border: 1px solid #d8cfc5;
 
-    background: #f8f4ef;
+    background:
+        rgba(248, 244, 239, 0.85);
 
     color: #655d56;
 
@@ -524,10 +781,10 @@ video {
     cursor: pointer;
 
     transition:
-        background 0.2s,
-        color 0.2s,
-        border-color 0.2s,
-        transform 0.2s;
+        background 0.2s ease,
+        color 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.2s ease;
 }
 
 
@@ -607,7 +864,7 @@ video {
 
 
     h1 {
-        margin-top: 30px;
+        margin-top: 12px;
     }
 
 
@@ -618,6 +875,11 @@ video {
 
     .strip {
         width: 175px;
+    }
+
+
+    .background-decoration {
+        opacity: 0.25;
     }
 
 }
@@ -669,6 +931,14 @@ video {
 
     .controls .button {
         width: 100%;
+    }
+
+
+    .filter-button {
+        padding:
+            7px 9px;
+
+        font-size: 10px;
     }
 
 }
