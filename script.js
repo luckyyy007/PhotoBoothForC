@@ -465,23 +465,6 @@ async function takePhoto() {
 
     context.save();
 
-
-    /*
-        Flip canvas horizontally.
-    */
-
-    context.translate(
-        canvas.width,
-        0
-    );
-
-
-    context.scale(
-        -1,
-        1
-    );
-
-
     /*
         Draw current camera frame.
     */
