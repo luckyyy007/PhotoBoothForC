@@ -59,6 +59,31 @@ let currentFilter = "original";
 
 
 /* =====================================================
+   CAMERA RATIO
+===================================================== */
+
+/*
+   Everything uses the same 3:4 portrait ratio.
+
+   This means:
+
+   CAMERA PREVIEW
+        ↓
+   CAPTURED PHOTO
+        ↓
+   STRIP
+        ↓
+   DOWNLOADED PHOTO
+
+   all have exactly the same crop.
+*/
+
+const PHOTO_WIDTH = 900;
+
+const PHOTO_HEIGHT = 1200;
+
+
+/* =====================================================
    FILTERS
 ===================================================== */
 
@@ -177,6 +202,7 @@ function updateStrip() {
         }
     }
 
+
     const label =
         document.createElement("div");
 
@@ -212,6 +238,7 @@ async function startCamera() {
             );
         }
 
+
         cameraStream =
             await navigator.mediaDevices
                 .getUserMedia({
@@ -220,12 +247,17 @@ async function startCamera() {
 
                         facingMode: "user",
 
+                        /*
+                           Ask for a portrait-friendly
+                           high-resolution camera stream.
+                        */
+
                         width: {
-                            ideal: 1280
+                            ideal: 1200
                         },
 
                         height: {
-                            ideal: 960
+                            ideal: 1600
                         }
 
                     },
@@ -234,11 +266,14 @@ async function startCamera() {
 
                 });
 
+
         video.srcObject =
             cameraStream;
 
+
         status.textContent =
             "okayyy, we're ready ✨";
+
 
         startButton.disabled =
             true;
@@ -293,6 +328,7 @@ async function takePhoto() {
         return;
     }
 
+
     takingPhoto = true;
 
     snapButton.disabled =
@@ -318,6 +354,7 @@ async function takePhoto() {
         await wait(700);
     }
 
+
     countdown.textContent =
         "📸";
 
@@ -325,7 +362,7 @@ async function takePhoto() {
 
 
     /* =================================================
-       CREATE PHOTO
+       CAMERA DIMENSIONS
     ================================================= */
 
     const videoWidth =
@@ -336,17 +373,88 @@ async function takePhoto() {
 
 
     /*
-       Keep the REAL camera ratio.
+       We need a 3:4 portrait crop.
 
-       We do not force the image to 1:1.
-       We use the actual video dimensions.
+       Target ratio:
+
+       3 / 4 = 0.75
     */
 
+    const targetRatio =
+        3 / 4;
+
+    const videoRatio =
+        videoWidth /
+        videoHeight;
+
+
+    let sourceWidth;
+    let sourceHeight;
+    let sourceX;
+    let sourceY;
+
+
+    /* =================================================
+       CALCULATE EXACT PREVIEW CROP
+    ================================================= */
+
+    if (
+        videoRatio > targetRatio
+    ) {
+
+        /*
+           Camera is too wide.
+
+           Crop left + right.
+        */
+
+        sourceHeight =
+            videoHeight;
+
+        sourceWidth =
+            videoHeight *
+            targetRatio;
+
+        sourceX =
+            (videoWidth - sourceWidth) / 2;
+
+        sourceY =
+            0;
+
+    }
+
+    else {
+
+        /*
+           Camera is too tall.
+
+           Crop top + bottom.
+        */
+
+        sourceWidth =
+            videoWidth;
+
+        sourceHeight =
+            videoWidth /
+            targetRatio;
+
+        sourceX =
+            0;
+
+        sourceY =
+            (videoHeight - sourceHeight) / 2;
+    }
+
+
+    /* =================================================
+       CREATE FINAL PHOTO
+    ================================================= */
+
     canvas.width =
-        videoWidth;
+        PHOTO_WIDTH;
 
     canvas.height =
-        videoHeight;
+        PHOTO_HEIGHT;
 
 
     const context =
@@ -358,20 +466,32 @@ async function takePhoto() {
 
        The preview is mirrored with CSS.
 
-       The saved photo is NOT mirrored.
+       The actual saved photo is NOT mirrored.
+
+       The crop is EXACTLY the same crop
+       that the user sees in the preview.
     */
 
     context.drawImage(
+
         video,
+
+        sourceX,
+        sourceY,
+
+        sourceWidth,
+        sourceHeight,
+
         0,
         0,
-        videoWidth,
-        videoHeight
+
+        PHOTO_WIDTH,
+        PHOTO_HEIGHT
     );
 
 
     /* =================================================
-       SAVE ORIGINAL PHOTO
+       SAVE PHOTO
     ================================================= */
 
     const image =
@@ -379,6 +499,7 @@ async function takePhoto() {
             "image/jpeg",
             0.92
         );
+
 
     photos.push(
         image
@@ -390,6 +511,7 @@ async function takePhoto() {
     ================================================= */
 
     updateStrip();
+
 
     countdown.style.display =
         "none";
@@ -429,6 +551,7 @@ async function takePhoto() {
             "ready"
         );
     }
+
 
     takingPhoto = false;
 }
@@ -513,116 +636,6 @@ function reset() {
 
 
 /* =====================================================
-   DRAW IMAGE WITHOUT STRETCHING
-===================================================== */
-
-function drawImageCover(
-    context,
-    image,
-    x,
-    y,
-    targetWidth,
-    targetHeight
-) {
-
-    /*
-       Source dimensions
-    */
-
-    const sourceWidth =
-        image.naturalWidth;
-
-    const sourceHeight =
-        image.naturalHeight;
-
-
-    /*
-       Source ratio
-    */
-
-    const sourceRatio =
-        sourceWidth /
-        sourceHeight;
-
-
-    /*
-       Target ratio
-    */
-
-    const targetRatio =
-        targetWidth /
-        targetHeight;
-
-
-    let sourceX = 0;
-    let sourceY = 0;
-
-    let cropWidth =
-        sourceWidth;
-
-    let cropHeight =
-        sourceHeight;
-
-
-    /*
-       If source is wider than target:
-       crop the left/right.
-
-       If source is taller than target:
-       crop the top/bottom.
-    */
-
-    if (
-        sourceRatio > targetRatio
-    ) {
-
-        cropWidth =
-            sourceHeight *
-            targetRatio;
-
-        sourceX =
-            (sourceWidth - cropWidth) / 2;
-
-    }
-
-    else if (
-        sourceRatio < targetRatio
-    ) {
-
-        cropHeight =
-            sourceWidth /
-            targetRatio;
-
-        sourceY =
-            (sourceHeight - cropHeight) / 2;
-    }
-
-
-    /*
-       Draw the image using the crop.
-
-       This NEVER stretches the original image.
-    */
-
-    context.drawImage(
-        image,
-
-        sourceX,
-        sourceY,
-
-        cropWidth,
-        cropHeight,
-
-        x,
-        y,
-
-        targetWidth,
-        targetHeight
-    );
-}
-
-
-/* =====================================================
    DOWNLOAD STRIP
 ===================================================== */
 
@@ -642,21 +655,6 @@ function downloadStrip() {
     const width =
         900;
 
-    const photoWidth =
-        width - 84;
-
-    /*
-       4:3 target ratio.
-
-       The downloaded photos therefore have
-       the same visual ratio as the camera.
-    */
-
-    const photoHeight =
-        Math.round(
-            photoWidth * 3 / 4
-        );
-
     const padding =
         42;
 
@@ -667,6 +665,26 @@ function downloadStrip() {
         72;
 
 
+    /*
+       The photos have the exact same
+       3:4 ratio as the captured images.
+
+       No crop is needed here.
+
+       No stretching is possible.
+    */
+
+    const photoWidth =
+        width -
+        padding * 2;
+
+    const photoHeight =
+        Math.round(
+            photoWidth *
+            4 / 3
+        );
+
+
     /* =================================================
        OUTPUT CANVAS
     ================================================= */
@@ -674,8 +692,10 @@ function downloadStrip() {
     const output =
         document.createElement("canvas");
 
+
     output.width =
         width;
+
 
     output.height =
         padding +
@@ -722,15 +742,11 @@ function downloadStrip() {
             image.onload =
                 () => {
 
-                    /*
-                       Save canvas state
-                    */
-
                     context.save();
 
 
                     /*
-                       Apply selected filter
+                       Apply selected filter.
                     */
 
                     context.filter =
@@ -740,18 +756,19 @@ function downloadStrip() {
 
 
                     /*
-                       Draw with COVER logic.
+                       IMPORTANT:
 
-                       The source photo keeps
-                       its original ratio.
+                       The image is ALREADY
+                       exactly 3:4.
 
-                       Any excess is cropped.
+                       The destination is ALSO
+                       exactly 3:4.
 
-                       NOTHING gets stretched.
+                       Therefore there is NO crop
+                       and NO stretching.
                     */
 
-                    drawImageCover(
-                        context,
+                    context.drawImage(
 
                         image,
 
@@ -759,17 +776,16 @@ function downloadStrip() {
 
                         padding +
                         index *
-                        (photoHeight + gap),
+                        (
+                            photoHeight +
+                            gap
+                        ),
 
                         photoWidth,
 
                         photoHeight
                     );
 
-
-                    /*
-                       Restore state
-                    */
 
                     context.restore();
 
@@ -778,16 +794,12 @@ function downloadStrip() {
 
 
                     /* =================================
-                       ALL PHOTOS LOADED
+                       ALL FOUR PHOTOS LOADED
                     ================================= */
 
                     if (
                         loadedImages === 4
                     ) {
-
-                        /*
-                           Label
-                        */
 
                         context.fillStyle =
                             "#77706a";
@@ -798,6 +810,7 @@ function downloadStrip() {
                         context.textAlign =
                             "center";
 
+
                         context.fillText(
                             "charlie • 2026",
 
@@ -807,9 +820,9 @@ function downloadStrip() {
                         );
 
 
-                        /*
-                           Convert to JPEG
-                        */
+                        /* =============================
+                           CREATE DOWNLOAD
+                        ============================= */
 
                         const imageURL =
                             output.toDataURL(
@@ -818,23 +831,23 @@ function downloadStrip() {
                             );
 
 
-                        /*
-                           Download
-                        */
-
                         const link =
                             document.createElement(
                                 "a"
                             );
 
+
                         link.download =
                             `charlie-photobooth-${currentFilter}.jpg`;
+
 
                         link.href =
                             imageURL;
 
+
                         link.click();
                     }
+
                 };
 
 
@@ -854,15 +867,18 @@ startButton.addEventListener(
     startCamera
 );
 
+
 snapButton.addEventListener(
     "click",
     takePhoto
 );
 
+
 resetButton.addEventListener(
     "click",
     reset
 );
+
 
 downloadButton.addEventListener(
     "click",
@@ -870,9 +886,9 @@ downloadButton.addEventListener(
 );
 
 
-/*
-   Filter buttons
-*/
+/* =====================================================
+   FILTER BUTTONS
+===================================================== */
 
 filterButtons.forEach(
     button => {
