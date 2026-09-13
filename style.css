@@ -3,11 +3,6 @@
    Dreamy / Retro / Cute
 ===================================================== */
 
-
-/* =========================
-   RESET
-========================= */
-
 * {
     box-sizing: border-box;
 }
@@ -284,14 +279,12 @@ h1 span {
     width: 100%;
 
     /*
-       Natural webcam ratio.
+       VERTICAL CAMERA
 
-       Most webcams return 4:3.
-       The video itself determines
-       the actual image ratio.
+       3:4 = portrait
     */
 
-    aspect-ratio: 4 / 3;
+    aspect-ratio: 3 / 4;
 
     overflow: hidden;
 
@@ -311,24 +304,27 @@ h1 span {
         3px solid rgba(255, 255, 255, 0.7);
 }
 
+
 video {
     width: 100%;
 
     height: 100%;
 
     /*
-       Fill the preview without stretching.
+       The video fills the portrait frame
+       without stretching.
     */
 
     object-fit: cover;
 
     /*
-       Selfie-style mirrored preview.
+       Selfie preview.
     */
 
     transform:
         scaleX(-1);
 }
+
 
 #photoCanvas {
     display: none;
@@ -624,17 +620,20 @@ video {
         translateY(-3px);
 }
 
+
+/*
+   IMPORTANT:
+
+   Strip images are VERTICAL 3:4,
+   exactly matching the camera.
+*/
+
 .strip img {
     display: block;
 
     width: 100%;
 
-    /*
-       The strip uses 4:3 photos,
-       matching the camera.
-    */
-
-    aspect-ratio: 4 / 3;
+    aspect-ratio: 3 / 4;
 
     object-fit: cover;
 
@@ -644,10 +643,11 @@ video {
         filter 0.25s ease;
 }
 
+
 .empty-photo {
     width: 100%;
 
-    aspect-ratio: 4 / 3;
+    aspect-ratio: 3 / 4;
 
     background: #eeeae5;
 
