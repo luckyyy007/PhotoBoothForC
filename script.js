@@ -59,28 +59,18 @@ let currentFilter = "original";
 
 
 /* =====================================================
-   CAMERA RATIO
+   PHOTO RATIO
 ===================================================== */
 
 /*
-   Everything uses the same 3:4 portrait ratio.
+   Phone portrait ratio:
 
-   This means:
-
-   CAMERA PREVIEW
-        ↓
-   CAPTURED PHOTO
-        ↓
-   STRIP
-        ↓
-   DOWNLOADED PHOTO
-
-   all have exactly the same crop.
+   9 : 16
 */
 
 const PHOTO_WIDTH = 900;
 
-const PHOTO_HEIGHT = 1200;
+const PHOTO_HEIGHT = 1600;
 
 
 /* =====================================================
@@ -160,6 +150,7 @@ function updateStrip() {
 
     strip.innerHTML = "";
 
+
     for (
         let i = 0;
         i < 4;
@@ -171,13 +162,16 @@ function updateStrip() {
             const image =
                 document.createElement("img");
 
+
             image.src =
                 photos[i];
+
 
             image.style.filter =
                 filterSettings[
                     currentFilter
                 ].css;
+
 
             strip.appendChild(
                 image
@@ -190,11 +184,14 @@ function updateStrip() {
             const empty =
                 document.createElement("div");
 
+
             empty.className =
                 "empty-photo";
 
+
             empty.textContent =
                 `PHOTO ${i + 1}`;
+
 
             strip.appendChild(
                 empty
@@ -206,11 +203,14 @@ function updateStrip() {
     const label =
         document.createElement("div");
 
+
     label.className =
         "strip-label";
 
+
     label.textContent =
         "charlie • 2026";
+
 
     strip.appendChild(
         label
@@ -225,6 +225,7 @@ function updateStrip() {
 async function startCamera() {
 
     clearError();
+
 
     try {
 
@@ -248,16 +249,20 @@ async function startCamera() {
                         facingMode: "user",
 
                         /*
-                           Ask for a portrait-friendly
-                           high-resolution camera stream.
+                           Ask the phone for a
+                           high-quality portrait stream.
+
+                           The browser may choose
+                           the closest available
+                           native camera resolution.
                         */
 
                         width: {
-                            ideal: 1200
+                            ideal: 1080
                         },
 
                         height: {
-                            ideal: 1600
+                            ideal: 1920
                         }
 
                     },
@@ -271,12 +276,45 @@ async function startCamera() {
             cameraStream;
 
 
+        /*
+           Wait until the camera actually
+           knows its dimensions.
+        */
+
+        await new Promise(
+            resolve => {
+
+                if (
+                    video.readyState >= 1
+                ) {
+
+                    resolve();
+
+                }
+
+                else {
+
+                    video.addEventListener(
+                        "loadedmetadata",
+                        resolve,
+                        {
+                            once: true
+                        }
+                    );
+
+                }
+
+            }
+        );
+
+
         status.textContent =
             "okayyy, we're ready ✨";
 
 
         startButton.disabled =
             true;
+
 
         snapButton.disabled =
             false;
@@ -287,11 +325,13 @@ async function startCamera() {
 
         console.error(err);
 
+
         showError(
             "Could not access the camera. " +
             "Please allow camera permission " +
             "and use HTTPS or localhost."
         );
+
 
         status.textContent =
             "Camera unavailable";
@@ -316,6 +356,107 @@ function wait(milliseconds) {
 
 
 /* =====================================================
+   CALCULATE PORTRAIT CROP
+===================================================== */
+
+function getCropDimensions() {
+
+    const videoWidth =
+        video.videoWidth;
+
+    const videoHeight =
+        video.videoHeight;
+
+
+    /*
+       Target phone portrait ratio.
+
+       9 / 16 = 0.5625
+    */
+
+    const targetRatio =
+        9 / 16;
+
+
+    const videoRatio =
+        videoWidth /
+        videoHeight;
+
+
+    let sourceWidth;
+    let sourceHeight;
+    let sourceX;
+    let sourceY;
+
+
+    /*
+       If the camera stream is wider
+       than 9:16, crop the sides.
+    */
+
+    if (
+        videoRatio > targetRatio
+    ) {
+
+        sourceHeight =
+            videoHeight;
+
+
+        sourceWidth =
+            videoHeight *
+            targetRatio;
+
+
+        sourceX =
+            (
+                videoWidth -
+                sourceWidth
+            ) / 2;
+
+
+        sourceY =
+            0;
+
+    }
+
+    /*
+       If the camera stream is taller
+       than 9:16, crop the top/bottom.
+    */
+
+    else {
+
+        sourceWidth =
+            videoWidth;
+
+
+        sourceHeight =
+            videoWidth /
+            targetRatio;
+
+
+        sourceX =
+            0;
+
+
+        sourceY =
+            (
+                videoHeight -
+                sourceHeight
+            ) / 2;
+    }
+
+
+    return {
+        sourceX,
+        sourceY,
+        sourceWidth,
+        sourceHeight
+    };
+}
+
+
+/* =====================================================
    TAKE PHOTO
 ===================================================== */
 
@@ -330,6 +471,7 @@ async function takePhoto() {
 
 
     takingPhoto = true;
+
 
     snapButton.disabled =
         true;
@@ -348,8 +490,10 @@ async function takePhoto() {
         countdown.style.display =
             "grid";
 
+
         countdown.textContent =
             number;
+
 
         await wait(700);
     }
@@ -358,92 +502,16 @@ async function takePhoto() {
     countdown.textContent =
         "📸";
 
+
     await wait(180);
 
 
     /* =================================================
-       CAMERA DIMENSIONS
+       GET EXACT CAMERA CROP
     ================================================= */
 
-    const videoWidth =
-        video.videoWidth;
-
-    const videoHeight =
-        video.videoHeight;
-
-
-    /*
-       We need a 3:4 portrait crop.
-
-       Target ratio:
-
-       3 / 4 = 0.75
-    */
-
-    const targetRatio =
-        3 / 4;
-
-    const videoRatio =
-        videoWidth /
-        videoHeight;
-
-
-    let sourceWidth;
-    let sourceHeight;
-    let sourceX;
-    let sourceY;
-
-
-    /* =================================================
-       CALCULATE EXACT PREVIEW CROP
-    ================================================= */
-
-    if (
-        videoRatio > targetRatio
-    ) {
-
-        /*
-           Camera is too wide.
-
-           Crop left + right.
-        */
-
-        sourceHeight =
-            videoHeight;
-
-        sourceWidth =
-            videoHeight *
-            targetRatio;
-
-        sourceX =
-            (videoWidth - sourceWidth) / 2;
-
-        sourceY =
-            0;
-
-    }
-
-    else {
-
-        /*
-           Camera is too tall.
-
-           Crop top + bottom.
-        */
-
-        sourceWidth =
-            videoWidth;
-
-        sourceHeight =
-            videoWidth /
-            targetRatio;
-
-        sourceX =
-            0;
-
-        sourceY =
-            (videoHeight - sourceHeight) / 2;
-    }
+    const crop =
+        getCropDimensions();
 
 
     /* =================================================
@@ -452,6 +520,7 @@ async function takePhoto() {
 
     canvas.width =
         PHOTO_WIDTH;
+
 
     canvas.height =
         PHOTO_HEIGHT;
@@ -462,25 +531,26 @@ async function takePhoto() {
 
 
     /*
+       Draw the exact same crop
+       shown in the portrait preview.
+
        IMPORTANT:
 
-       The preview is mirrored with CSS.
+       We do NOT mirror the canvas.
 
-       The actual saved photo is NOT mirrored.
-
-       The crop is EXACTLY the same crop
-       that the user sees in the preview.
+       Preview = mirrored
+       Saved photo = normal
     */
 
     context.drawImage(
 
         video,
 
-        sourceX,
-        sourceY,
+        crop.sourceX,
+        crop.sourceY,
 
-        sourceWidth,
-        sourceHeight,
+        crop.sourceWidth,
+        crop.sourceHeight,
 
         0,
         0,
@@ -528,8 +598,10 @@ async function takePhoto() {
         snapButton.textContent =
             `photo ${photos.length + 1}/4 📸`;
 
+
         snapButton.disabled =
             false;
+
 
         status.textContent =
             `${photos.length}/4 ... looking cute ♡`;
@@ -541,11 +613,14 @@ async function takePhoto() {
         snapButton.textContent =
             "we got the pics ♡";
 
+
         status.textContent =
             "okay Charlie, that's actually cute ✨";
 
+
         downloadButton.disabled =
             false;
+
 
         filtersContainer.classList.add(
             "ready"
@@ -575,6 +650,7 @@ function applyFilter(filterName) {
                 button.dataset.filter ===
                 filterName
             );
+
         }
     );
 
@@ -591,6 +667,7 @@ function reset() {
 
     photos = [];
 
+
     currentFilter =
         "original";
 
@@ -606,6 +683,7 @@ function reset() {
                 button.dataset.filter ===
                 "original"
             );
+
         }
     );
 
@@ -618,8 +696,10 @@ function reset() {
     snapButton.textContent =
         "photo 1/4 📸";
 
+
     snapButton.disabled =
         !cameraStream;
+
 
     downloadButton.disabled =
         true;
@@ -655,33 +735,35 @@ function downloadStrip() {
     const width =
         900;
 
+
     const padding =
         42;
 
+
     const gap =
         24;
+
 
     const labelHeight =
         72;
 
 
     /*
-       The photos have the exact same
-       3:4 ratio as the captured images.
+       Every photo is 9:16.
 
-       No crop is needed here.
-
-       No stretching is possible.
+       The download uses exactly
+       the same ratio.
     */
 
     const photoWidth =
         width -
         padding * 2;
 
+
     const photoHeight =
         Math.round(
             photoWidth *
-            4 / 3
+            16 / 9
         );
 
 
@@ -715,6 +797,7 @@ function downloadStrip() {
 
     context.fillStyle =
         "#ffffff";
+
 
     context.fillRect(
         0,
@@ -756,16 +839,16 @@ function downloadStrip() {
 
 
                     /*
-                       IMPORTANT:
+                       Photo itself is already
+                       exactly 9:16.
 
-                       The image is ALREADY
-                       exactly 3:4.
+                       Destination is also
+                       exactly 9:16.
 
-                       The destination is ALSO
-                       exactly 3:4.
+                       Therefore:
 
-                       Therefore there is NO crop
-                       and NO stretching.
+                       NO additional crop
+                       NO stretching
                     */
 
                     context.drawImage(
@@ -793,10 +876,6 @@ function downloadStrip() {
                     loadedImages++;
 
 
-                    /* =================================
-                       ALL FOUR PHOTOS LOADED
-                    ================================= */
-
                     if (
                         loadedImages === 4
                     ) {
@@ -804,25 +883,25 @@ function downloadStrip() {
                         context.fillStyle =
                             "#77706a";
 
+
                         context.font =
                             "600 24px system-ui";
+
 
                         context.textAlign =
                             "center";
 
 
                         context.fillText(
+
                             "charlie • 2026",
 
                             width / 2,
 
                             output.height - 34
+
                         );
 
-
-                        /* =============================
-                           CREATE DOWNLOAD
-                        ============================= */
 
                         const imageURL =
                             output.toDataURL(
@@ -846,6 +925,7 @@ function downloadStrip() {
 
 
                         link.click();
+
                     }
 
                 };
@@ -853,6 +933,7 @@ function downloadStrip() {
 
             image.src =
                 photo;
+
         }
     );
 }
@@ -924,6 +1005,7 @@ window.addEventListener(
                     track =>
                         track.stop()
                 );
+
         }
 
     }
