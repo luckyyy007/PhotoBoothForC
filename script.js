@@ -48,7 +48,7 @@ let photos = [];
 
 let takingPhoto = false;
 
-let currentFilter = ["original"];
+let currentFilters = ["original"];
 
 let pendingPhoto = null;
 
@@ -1308,8 +1308,6 @@ filterButtons.forEach(button => {
 
 });
 
-});
-
 
 /* =====================================================
    DOWNLOAD PHOTO STRIP
@@ -1411,10 +1409,8 @@ downloadButton.addEventListener(
                        to the final downloaded strip.
                     */
 
-                    const filter =
-                        filterSettings[
-                            currentFilter
-                        ].css;
+                    const filter = currentFilters.map(
+                       filter => filterSettings[filter].css).join(" ");
 
 
                     context.filter =
@@ -1565,7 +1561,7 @@ function resetPhotobooth() {
        Reset filter.
     */
 
-    currentFilter =
+    currentFilters =
         "original";
 
 
