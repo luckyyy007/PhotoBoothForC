@@ -1026,3 +1026,182 @@ video {
     flex: 1;
     cursor: pointer;
 }
+
+/* =====================================================
+   DARK MODE
+===================================================== */
+
+.dark-mode-toggle {
+    align-self: flex-end;
+
+    border: 1px solid #d8cfc5;
+
+    background: rgba(248, 244, 239, 0.85);
+
+    color: #655d56;
+
+    border-radius: 999px;
+
+    padding: 8px 12px;
+
+    font: inherit;
+
+    font-size: 11px;
+
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition:
+        background 0.25s ease,
+        color 0.25s ease,
+        border-color 0.25s ease,
+        transform 0.2s ease;
+}
+
+.dark-mode-toggle:hover {
+    transform: translateY(-1px);
+}
+
+
+/* =========================
+   DARK MODE COLORS
+========================= */
+
+body.dark-mode {
+    background:
+        radial-gradient(
+            circle at 10% 10%,
+            rgba(80, 120, 150, 0.25),
+            transparent 30%
+        ),
+
+        radial-gradient(
+            circle at 90% 20%,
+            rgba(130, 70, 100, 0.25),
+            transparent 30%
+        ),
+
+        #171616;
+
+    color: #f3eee9;
+}
+
+
+body.dark-mode .card {
+    background: rgba(30, 29, 29, 0.96);
+
+    border-color: #3d3835;
+
+    box-shadow:
+        0 24px 70px
+        rgba(0, 0, 0, 0.45);
+}
+
+
+body.dark-mode .tagline {
+    color: #a9a19a;
+}
+
+
+body.dark-mode .intro {
+    color: #b4aca5;
+}
+
+
+body.dark-mode .right {
+    background:
+        linear-gradient(
+            145deg,
+            #202b30 0%,
+            #2c2229 55%,
+            #282522 100%
+        );
+
+    border-color: #3d3835;
+}
+
+
+body.dark-mode .right h2 {
+    color: #f5efea;
+}
+
+
+body.dark-mode .filter-title {
+    color: #aaa19a;
+}
+
+
+body.dark-mode .filter-button {
+    background: #2b2826;
+
+    border-color: #49433e;
+
+    color: #d8d0ca;
+}
+
+
+body.dark-mode .filter-button:hover {
+    background: #39342f;
+}
+
+
+body.dark-mode .filter-button.active {
+    background: #f3eee9;
+
+    border-color: #f3eee9;
+
+    color: #25211e;
+}
+
+
+body.dark-mode .dark-mode-toggle {
+    background: #2b2826;
+
+    border-color: #49433e;
+
+    color: #eee7e1;
+}
+
+
+body.dark-mode .empty-photo {
+    background: #2a2826;
+
+    color: #837d77;
+}
+
+
+body.dark-mode .strip {
+    background: #242220;
+
+    box-shadow:
+        0 18px 40px
+        rgba(0, 0, 0, 0.5);
+}
+
+
+body.dark-mode .strip-label {
+    color: #aaa19a;
+}
+
+
+body.dark-mode .privacy-note {
+    color: #9e968f;
+}
+
+
+body.dark-mode .secondary {
+    background: #302d2a;
+
+    color: #eee7e1;
+}
+
+
+body.dark-mode .crop-area {
+    background: #252321;
+}
+
+
+body.dark-mode .crop-header p {
+    color: #c4bcb5;
+}
