@@ -1,1032 +1,851 @@
-/* =====================================================
-   SNAPSTRIP
-   Dreamy / Retro / Cute
-===================================================== */
+const video = document.getElementById("video");
+const canvas = document.getElementById("photoCanvas");
+
+const startButton = document.getElementById("start");
+const snapButton = document.getElementById("snap");
+const resetButton = document.getElementById("reset");
+
+const countdown = document.getElementById("countdown");
+const status = document.getElementById("status");
+const error = document.getElementById("error");
+
+const strip = document.getElementById("strip");
+const filters = document.getElementById("filters");
+const downloadButton = document.getElementById("download");
+
+const cropEditor = document.getElementById("cropEditor");
+const cropArea = document.getElementById("cropArea");
+const cropImage = document.getElementById("cropImage");
+const zoomSlider = document.getElementById("zoomSlider");
+const cropConfirm = document.getElementById("cropConfirm");
+const cropCancel = document.getElementById("cropCancel");
 
 
-/* =========================
-   RESET
-========================= */
+// ===============================
+// SETTINGS
+// ===============================
 
-* {
-    box-sizing: border-box;
+const TOTAL_PHOTOS = 4;
+
+const filterSettings = {
+    original: "none",
+    vintage: "sepia(0.35) saturate(0.8) contrast(1.05)",
+    bw: "grayscale(1)",
+    warm: "sepia(0.18) saturate(1.25) contrast(1.05)",
+    cool: "saturate(0.85) hue-rotate(10deg) brightness(1.05)",
+    photobooth: "contrast(1.12) saturate(0.85) brightness(1.04)"
+};
+
+
+// ===============================
+// STATE
+// ===============================
+
+let stream = null;
+let photos = [];
+
+let currentFilter = "original";
+
+let pendingPhoto = null;
+let pendingImage = null;
+
+let cropScale = 1;
+let cropX = 0;
+let cropY = 0;
+
+let dragStartX = 0;
+let dragStartY = 0;
+let startCropX = 0;
+let startCropY = 0;
+
+let dragging = false;
+let takingPhoto = false;
+
+
+// ===============================
+// CAMERA
+// ===============================
+
+startButton.addEventListener("click", startCamera);
+
+async function startCamera() {
+    error.textContent = "";
+
+    try {
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+        }
+
+        stream = await navigator.mediaDevices.getUserMedia({
+            video: {
+                facingMode: "user",
+                width: {
+                    ideal: 1080
+                },
+                height: {
+                    ideal: 1920
+                }
+            },
+            audio: false
+        });
+
+        video.srcObject = stream;
+
+        await video.play();
+
+        status.textContent = "camera staat aan ♡";
+        startButton.disabled = true;
+        snapButton.disabled = false;
+
+    } catch (err) {
+        console.error(err);
+
+        error.textContent =
+            "je camera kon niet worden geopend :( geef de site camera-toegang en probeer opnieuw.";
+
+        status.textContent = "camera werkt nog niet";
+    }
 }
 
 
-html {
-    scroll-behavior: smooth;
-}
+// ===============================
+// TAKE PHOTO
+// ===============================
 
+snapButton.addEventListener("click", takePhoto);
 
-body {
-    margin: 0;
+function takePhoto() {
 
-    min-height: 100vh;
-
-    font-family:
-        Inter,
-        ui-sans-serif,
-        system-ui,
-        -apple-system,
-        BlinkMacSystemFont,
-        "Segoe UI",
-        sans-serif;
-
-    background:
-        radial-gradient(
-            circle at 10% 10%,
-            rgba(190, 225, 255, 0.65),
-            transparent 30%
-        ),
-
-        radial-gradient(
-            circle at 90% 20%,
-            rgba(255, 205, 225, 0.6),
-            transparent 30%
-        ),
-
-        #f7f2ec;
-
-    color: #25211e;
-
-    overflow-x: hidden;
-}
-
-
-
-/* =========================
-   BACKGROUND DECORATION
-========================= */
-
-.background-decoration {
-    position: fixed;
-
-    z-index: 0;
-
-    pointer-events: none;
-
-    user-select: none;
-
-    opacity: 0.45;
-
-    font-family:
-        Georgia,
-        serif;
-
-    animation:
-        floatDecoration 5s ease-in-out infinite;
-}
-
-
-.decoration-one {
-    top: 9%;
-
-    left: 4%;
-
-    color: #9bcff0;
-
-    font-size: 32px;
-}
-
-
-.decoration-two {
-    top: 25%;
-
-    right: 5%;
-
-    color: #e9a8c4;
-
-    font-size: 25px;
-
-    animation-delay: 1s;
-}
-
-
-.decoration-three {
-    bottom: 12%;
-
-    left: 7%;
-
-    color: #e9a8c4;
-
-    font-size: 24px;
-
-    animation-delay: 2s;
-}
-
-
-.decoration-four {
-    bottom: 7%;
-
-    right: 8%;
-
-    color: #9bcff0;
-
-    font-size: 30px;
-
-    animation-delay: 3s;
-}
-
-
-@keyframes floatDecoration {
-
-    0%,
-    100% {
-        transform:
-            translateY(0)
-            rotate(0deg);
+    if (!stream || takingPhoto || photos.length >= TOTAL_PHOTOS) {
+        return;
     }
 
-    50% {
-        transform:
-            translateY(-7px)
-            rotate(4deg);
+    takingPhoto = true;
+
+    let count = 3;
+
+    countdown.style.display = "flex";
+    countdown.textContent = count;
+
+    const timer = setInterval(() => {
+
+        count--;
+
+        if (count > 0) {
+            countdown.textContent = count;
+        } else {
+
+            clearInterval(timer);
+
+            countdown.style.display = "none";
+
+            captureFullPhoto();
+        }
+
+    }, 1000);
+}
+
+
+// ===============================
+// CAPTURE FULL 9:16 PHOTO
+// ===============================
+
+function captureFullPhoto() {
+
+    const videoWidth = video.videoWidth;
+    const videoHeight = video.videoHeight;
+
+    if (!videoWidth || !videoHeight) {
+        takingPhoto = false;
+        return;
     }
 
+    /*
+        We capture the COMPLETE camera frame.
+
+        Nothing is cropped here.
+        If the phone provides 9:16,
+        the complete 9:16 image is saved.
+    */
+
+    canvas.width = videoWidth;
+    canvas.height = videoHeight;
+
+    const context = canvas.getContext("2d");
+
+    context.save();
+
+    // Mirror selfie camera
+    context.translate(canvas.width, 0);
+    context.scale(-1, 1);
+
+    context.drawImage(
+        video,
+        0,
+        0,
+        videoWidth,
+        videoHeight
+    );
+
+    context.restore();
+
+    pendingPhoto = canvas.toDataURL(
+        "image/jpeg",
+        0.95
+    );
+
+    openCropEditor();
 }
 
 
+// ===============================
+// CROP EDITOR
+// ===============================
 
-/* =========================
-   MAIN APP
-========================= */
+function openCropEditor() {
 
-.app {
-    position: relative;
+    cropEditor.style.display = "block";
 
-    z-index: 1;
+    cropImage.onload = () => {
+        setupCropImage();
+    };
 
-    min-height: 100vh;
-
-    display: grid;
-
-    place-items: center;
-
-    padding: 28px;
+    cropImage.src = pendingPhoto;
 }
 
 
-.card {
-    width: min(1080px, 100%);
+function setupCropImage() {
 
-    min-height: 680px;
+    pendingImage = cropImage;
 
-    background:
-        rgba(255, 253, 249, 0.94);
+    const imageWidth = cropImage.naturalWidth;
+    const imageHeight = cropImage.naturalHeight;
 
-    border:
-        1px solid rgba(225, 215, 205, 0.8);
+    if (!imageWidth || !imageHeight) {
+        return;
+    }
 
-    border-radius: 28px;
+    /*
+        Make the crop editor itself the SAME
+        aspect ratio as the original photo.
 
-    overflow: hidden;
+        So a 9:16 phone photo stays 9:16.
+    */
 
-    box-shadow:
-        0 24px 70px
-        rgba(64, 48, 35, 0.12),
+    const ratio = imageWidth / imageHeight;
 
-        0 4px 15px
-        rgba(120, 150, 180, 0.06);
+    cropArea.style.aspectRatio = `${ratio}`;
 
-    display: grid;
+    cropScale = 1;
+    cropX = 0;
+    cropY = 0;
 
-    grid-template-columns:
-        1.35fr 0.65fr;
+    zoomSlider.value = 1;
 
-    backdrop-filter:
-        blur(12px);
+    updateCropImage();
 }
 
 
+// ===============================
+// UPDATE CROP IMAGE
+// ===============================
 
-/* =========================
-   LEFT SIDE
-========================= */
+function updateCropImage() {
 
-.left {
-    padding: 34px;
+    if (!pendingImage) {
+        return;
+    }
 
-    display: flex;
+    const areaWidth = cropArea.clientWidth;
+    const areaHeight = cropArea.clientHeight;
 
-    flex-direction: column;
+    const imageWidth = pendingImage.naturalWidth;
+    const imageHeight = pendingImage.naturalHeight;
+
+    const baseScale = Math.min(
+        areaWidth / imageWidth,
+        areaHeight / imageHeight
+    );
+
+    const displayWidth =
+        imageWidth * baseScale * cropScale;
+
+    const displayHeight =
+        imageHeight * baseScale * cropScale;
+
+    pendingImage.style.width = `${displayWidth}px`;
+    pendingImage.style.height = `${displayHeight}px`;
+
+    pendingImage.style.left =
+        `${(areaWidth - displayWidth) / 2 + cropX}px`;
+
+    pendingImage.style.top =
+        `${(areaHeight - displayHeight) / 2 + cropY}px`;
 }
 
 
-.branding {
-    position: relative;
+// ===============================
+// ZOOM
+// ===============================
+
+zoomSlider.addEventListener("input", () => {
+
+    cropScale = Number(zoomSlider.value);
+
+    updateCropImage();
+});
+
+
+// ===============================
+// DRAG WITH MOUSE
+// ===============================
+
+cropArea.addEventListener("mousedown", startDrag);
+
+document.addEventListener("mousemove", moveDrag);
+document.addEventListener("mouseup", endDrag);
+
+
+function startDrag(event) {
+
+    dragging = true;
+
+    dragStartX = event.clientX;
+    dragStartY = event.clientY;
+
+    startCropX = cropX;
+    startCropY = cropY;
 }
 
 
-.brand {
-    font-size: 22px;
+function moveDrag(event) {
 
-    font-weight: 800;
+    if (!dragging) {
+        return;
+    }
 
-    letter-spacing: -0.04em;
+    cropX =
+        startCropX +
+        (event.clientX - dragStartX);
+
+    cropY =
+        startCropY +
+        (event.clientY - dragStartY);
+
+    updateCropImage();
 }
 
 
-.brand span {
-    color: #e6a7c2;
+function endDrag() {
+    dragging = false;
 }
 
 
-.tagline {
-    margin-top: 3px;
+// ===============================
+// DRAG WITH TOUCH
+// ===============================
 
-    color: #8b8178;
+cropArea.addEventListener(
+    "touchstart",
+    startTouchDrag,
+    { passive: false }
+);
 
-    font-size: 13px;
+cropArea.addEventListener(
+    "touchmove",
+    moveTouchDrag,
+    { passive: false }
+);
+
+cropArea.addEventListener(
+    "touchend",
+    endDrag
+);
+
+
+function startTouchDrag(event) {
+
+    event.preventDefault();
+
+    if (!event.touches.length) {
+        return;
+    }
+
+    const touch = event.touches[0];
+
+    dragging = true;
+
+    dragStartX = touch.clientX;
+    dragStartY = touch.clientY;
+
+    startCropX = cropX;
+    startCropY = cropY;
 }
 
 
-.tiny-decoration {
-    margin-top: 28px;
+function moveTouchDrag(event) {
 
-    color: #a7cfe8;
+    if (!dragging || !event.touches.length) {
+        return;
+    }
 
-    font-family:
-        Georgia,
-        serif;
+    event.preventDefault();
 
-    font-size: 13px;
+    const touch = event.touches[0];
 
-    letter-spacing: 0.4em;
+    cropX =
+        startCropX +
+        (touch.clientX - dragStartX);
 
-    opacity: 0.8;
+    cropY =
+        startCropY +
+        (touch.clientY - dragStartY);
+
+    updateCropImage();
 }
 
 
-h1 {
-    margin:
-        12px 0 14px;
+// ===============================
+// CONFIRM PHOTO
+// ===============================
 
-    max-width: 600px;
+cropConfirm.addEventListener("click", confirmCrop);
 
-    font-size:
-        clamp(34px, 5vw, 58px);
+function confirmCrop() {
 
-    line-height: 0.95;
+    if (!pendingImage) {
+        return;
+    }
 
-    letter-spacing: -0.055em;
-}
+    const imageWidth = pendingImage.naturalWidth;
+    const imageHeight = pendingImage.naturalHeight;
 
+    const areaWidth = cropArea.clientWidth;
+    const areaHeight = cropArea.clientHeight;
 
-h1 span {
-    color: #d98eae;
+    /*
+        Because the editor has the exact same
+        aspect ratio as the original photo,
+        we can export the complete image.
 
-    font-family:
-        Georgia,
-        "Times New Roman",
-        serif;
+        Zoom/pan still works.
+    */
 
-    font-style: italic;
+    const outputWidth = 1080;
+    const outputHeight = 1920;
 
-    font-weight: 500;
-}
+    const outputCanvas =
+        document.createElement("canvas");
 
+    outputCanvas.width = outputWidth;
+    outputCanvas.height = outputHeight;
 
-.intro {
-    max-width: 540px;
+    const context =
+        outputCanvas.getContext("2d");
 
-    margin:
-        0 0 26px;
+    const baseScale = Math.min(
+        areaWidth / imageWidth,
+        areaHeight / imageHeight
+    );
 
-    color: #766d66;
+    const displayedWidth =
+        imageWidth * baseScale * cropScale;
 
-    line-height: 1.6;
-}
+    const displayedHeight =
+        imageHeight * baseScale * cropScale;
 
+    const imageLeft =
+        (areaWidth - displayedWidth) / 2 + cropX;
 
+    const imageTop =
+        (areaHeight - displayedHeight) / 2 + cropY;
 
-/* =========================
-   CAMERA
-========================= */
+    /*
+        Convert screen coordinates back
+        to coordinates inside the original image.
+    */
 
-.camera-container {
-    position: relative;
-
-    width: 100%;
-
-    aspect-ratio: 4 / 3;
-
-    max-height: 470px;
-
-    overflow: hidden;
-
-    border-radius: 22px;
-
-    background: #191715;
-
-    display: grid;
-
-    place-items: center;
-
-    box-shadow:
-        0 12px 30px
-        rgba(50, 40, 30, 0.12);
-
-    border:
-        3px solid rgba(255, 255, 255, 0.7);
-}
-
-
-video {
-    width: 100%;
-
-    height: 100%;
-
-    object-fit: cover;
-
-   object-position: center center;
-
-    /* selfie preview is mirrored */
-
-    transform:
-        scaleX(-1);
-}
-
-
-#photoCanvas {
-    display: none;
-}
-
-
-
-/* =========================
-   CAMERA DECORATIONS
-========================= */
-
-.camera-corner {
-    position: absolute;
-
-    z-index: 3;
-
-    pointer-events: none;
-
-    font-family:
-        Georgia,
-        serif;
-
-    font-size: 20px;
-
-    opacity: 0.8;
-}
-
-
-.camera-corner-top {
-    top: 13px;
-
-    right: 15px;
-
-    color: #f3b2ca;
-}
-
-
-.camera-corner-bottom {
-    bottom: 50px;
-
-    right: 15px;
-
-    color: #b4ddf4;
-}
-
-
-
-/* =========================
-   COUNTDOWN
-========================= */
-
-.countdown {
-    position: absolute;
-
-    inset: 0;
-
-    display: none;
-
-    place-items: center;
-
-    color: white;
-
-    font-size: 110px;
-
-    font-weight: 800;
-
-    background:
-        rgba(0, 0, 0, 0.15);
-
-    text-shadow:
-        0 4px 30px
-        rgba(0, 0, 0, 0.4);
-}
-
-
-
-/* =========================
-   CAMERA STATUS
-========================= */
-
-.status {
-    position: absolute;
-
-    left: 16px;
-
-    bottom: 16px;
-
-    padding:
-        8px 11px;
-
-    border-radius: 999px;
-
-    color: white;
-
-    background:
-        rgba(0, 0, 0, 0.45);
-
-    backdrop-filter:
-        blur(10px);
-
-    font-size: 12px;
-}
-
-
-
-/* =========================
-   ERROR
-========================= */
-
-.error {
-    display: none;
-
-    margin-top: 12px;
-
-    padding:
-        10px 13px;
-
-    border-radius: 12px;
-
-    color: #9a3c32;
-
-    background: #f8e2de;
-
-    font-size: 13px;
-}
-
-
-
-/* =========================
-   BUTTONS
-========================= */
-
-.controls {
-    display: flex;
-
-    gap: 10px;
-
-    flex-wrap: wrap;
-
-    margin-top: 16px;
-}
-
-
-.button {
-    border: 0;
-
-    border-radius: 999px;
-
-    padding:
-        13px 18px;
-
-    font: inherit;
-
-    font-weight: 700;
-
-    cursor: pointer;
-
-    transition:
-        transform 0.2s ease,
-        opacity 0.2s ease,
-        background 0.2s ease,
-        box-shadow 0.2s ease;
-}
-
-
-.button:hover:not(:disabled) {
-    transform:
-        translateY(-2px);
-
-    box-shadow:
-        0 7px 18px
-        rgba(70, 55, 45, 0.12);
-}
-
-
-.button:active:not(:disabled) {
-    transform:
-        translateY(0);
-}
-
-
-.button:disabled {
-    opacity: 0.4;
-
-    cursor: not-allowed;
-
-    transform: none;
-}
-
-
-.primary {
-    background: #25211e;
-
-    color: white;
-}
-
-
-.primary:hover:not(:disabled) {
-    background: #3b3530;
-}
-
-
-.secondary {
-    background: #eee7df;
-
-    color: #332e29;
-}
-
-
-
-/* =========================
-   RIGHT SIDE
-========================= */
-
-.right {
-    position: relative;
-
-    padding: 34px;
-
-    background:
-        linear-gradient(
-            145deg,
-            #edf8ff 0%,
-            #f8eef4 55%,
-            #eee7df 100%
+    const sourceX =
+        Math.max(
+            0,
+            (-imageLeft / displayedWidth) * imageWidth
         );
 
-    border-left:
-        1px solid #e0d7cc;
+    const sourceY =
+        Math.max(
+            0,
+            (-imageTop / displayedHeight) * imageHeight
+        );
 
-    display: flex;
+    const visibleWidth =
+        Math.min(
+            imageWidth - sourceX,
+            (areaWidth / displayedWidth) * imageWidth
+        );
 
-    flex-direction: column;
+    const visibleHeight =
+        Math.min(
+            imageHeight - sourceY,
+            (areaHeight / displayedHeight) * imageHeight
+        );
 
-    align-items: center;
+    context.drawImage(
+        pendingImage,
+        sourceX,
+        sourceY,
+        visibleWidth,
+        visibleHeight,
+        0,
+        0,
+        outputWidth,
+        outputHeight
+    );
 
-    justify-content: center;
+    const finalPhoto =
+        outputCanvas.toDataURL(
+            "image/jpeg",
+            0.95
+        );
+
+    photos.push(finalPhoto);
+
+    pendingPhoto = null;
+    pendingImage = null;
+
+    cropEditor.style.display = "none";
+
+    takingPhoto = false;
+
+    updateStrip();
+
+    if (photos.length < TOTAL_PHOTOS) {
+
+        snapButton.textContent =
+            `photo ${photos.length + 1}/4 📸`;
+
+        status.textContent =
+            `foto ${photos.length} klaar ♡`;
+
+    } else {
+
+        snapButton.disabled = true;
+
+        snapButton.textContent =
+            "alle foto's zijn klaar ♡";
+
+        status.textContent =
+            "jouw strip is klaar ✨";
+
+        downloadButton.disabled = false;
+    }
 }
 
 
-.right-decoration {
-    position: absolute;
+// ===============================
+// CANCEL CROP
+// ===============================
 
-    top: 22px;
+cropCancel.addEventListener("click", cancelCrop);
 
-    right: 28px;
+function cancelCrop() {
 
-    color: #e2a8c1;
+    pendingPhoto = null;
+    pendingImage = null;
 
-    font-family:
-        Georgia,
-        serif;
+    cropEditor.style.display = "none";
 
-    font-size: 22px;
+    takingPhoto = false;
 
-    opacity: 0.75;
+    status.textContent =
+        "oke opnieuw 📸";
 }
 
 
-.right h2 {
-    margin:
-        0 0 18px;
+// ===============================
+// UPDATE STRIP
+// ===============================
 
-    font-size: 16px;
+function updateStrip() {
 
-    letter-spacing: 0.02em;
+    strip.innerHTML = "";
+
+    photos.forEach((photo, index) => {
+
+        const image =
+            document.createElement("img");
+
+        image.src = photo;
+
+        image.className = "strip-photo";
+
+        image.alt =
+            `Photo ${index + 1}`;
+
+        image.style.filter =
+            filterSettings[currentFilter];
+
+        strip.appendChild(image);
+    });
+
+    const label =
+        document.createElement("div");
+
+    label.className = "strip-label";
+
+    label.textContent =
+        "Charlie's portable photobooth";
+
+    strip.appendChild(label);
 }
 
 
+// ===============================
+// FILTERS
+// ===============================
 
-/* =========================
-   STRIP
-========================= */
+filters.addEventListener("click", event => {
 
-.strip-wrapper {
-    min-height: 470px;
+    const button =
+        event.target.closest(".filter-button");
 
-    display: grid;
-
-    place-items: center;
-}
-
-
-.strip {
-    width: 190px;
-
-    padding:
-        10px 10px 18px;
-
-    background: white;
-
-    box-shadow:
-        0 18px 40px
-        rgba(40, 30, 20, 0.18);
-
-    transform:
-        rotate(1.5deg);
-
-    display: flex;
-
-    flex-direction: column;
-
-    gap: 8px;
-
-    transition:
-        transform 0.3s ease;
-}
-
-
-.strip:hover {
-    transform:
-        rotate(0deg)
-        translateY(-3px);
-}
-
-
-.strip img {
-    display: block;
-
-    width: 100%;
-
-    aspect-ratio: 4 / 3;
-
-    object-fit: cover;
-
-    background: #ddd;
-
-    transition:
-        filter 0.25s ease;
-}
-
-
-.empty-photo {
-    width: 100%;
-
-    aspect-ratio: 4 / 3;
-
-    background: #eeeae5;
-
-    display: grid;
-
-    place-items: center;
-
-    color: #aaa39c;
-
-    font-size: 11px;
-}
-
-
-.strip-label {
-    margin-top: 3px;
-
-    text-align: center;
-
-    color: #77706a;
-
-    font-size: 10px;
-
-    letter-spacing: 0.18em;
-
-    text-transform: uppercase;
-}
-
-
-
-/* =========================
-   FILTERS
-========================= */
-
-.filters {
-    width: 100%;
-
-    margin-bottom: 16px;
-
-    opacity: 0.4;
-
-    pointer-events: none;
-
-    transition:
-        opacity 0.25s ease;
-}
-
-
-.filters.ready {
-    opacity: 1;
-
-    pointer-events: auto;
-}
-
-
-.filter-title {
-    margin:
-        0 0 8px;
-
-    text-align: center;
-
-    color: #77706a;
-
-    font-size: 12px;
-
-    font-weight: 700;
-}
-
-
-.filter-buttons {
-    display: flex;
-
-    justify-content: center;
-
-    align-items: center;
-
-    gap: 6px;
-
-    flex-wrap: wrap;
-}
-
-
-.filter-button {
-    border: 1px solid #d8cfc5;
-
-    background:
-        rgba(248, 244, 239, 0.85);
-
-    color: #655d56;
-
-    border-radius: 999px;
-
-    padding:
-        7px 10px;
-
-    font-size: 11px;
-
-    font-weight: 600;
-
-    cursor: pointer;
-
-    transition:
-        background 0.2s ease,
-        color 0.2s ease,
-        border-color 0.2s ease,
-        transform 0.2s ease;
-}
-
-
-.filter-button:hover {
-    transform:
-        translateY(-1px);
-
-    background: #e9e1d8;
-}
-
-
-.filter-button.active {
-    background: #25211e;
-
-    border-color: #25211e;
-
-    color: white;
-}
-
-
-
-/* =========================
-   DOWNLOAD
-========================= */
-
-.download-button {
-    width: 100%;
-}
-
-
-.privacy-note {
-    margin-top: 12px;
-
-    color: #847a71;
-
-    font-size: 12px;
-
-    line-height: 1.5;
-
-    text-align: center;
-}
-
-
-
-/* =========================
-   MOBILE
-========================= */
-
-@media (max-width: 820px) {
-
-    .app {
-        padding: 14px;
+    if (!button) {
+        return;
     }
 
+    currentFilter =
+        button.dataset.filter;
 
-    .card {
-        grid-template-columns: 1fr;
+    document
+        .querySelectorAll(".filter-button")
+        .forEach(btn => {
+            btn.classList.remove("active");
+        });
 
-        border-radius: 22px;
+    button.classList.add("active");
+
+    updateStrip();
+});
+
+
+// ===============================
+// DOWNLOAD
+// ===============================
+
+downloadButton.addEventListener(
+    "click",
+    downloadStrip
+);
+
+
+function downloadStrip() {
+
+    if (photos.length !== TOTAL_PHOTOS) {
+        return;
     }
 
+    /*
+        9:16 per photo.
 
-    .left {
-        padding: 24px;
-    }
+        1080 x 1920 per photo.
+    */
 
+    const photoWidth = 1080;
+    const photoHeight = 1920;
 
-    .right {
-        padding:
-            34px 24px;
+    const gap = 30;
 
-        border-left: 0;
+    const labelHeight = 160;
 
-        border-top:
-            1px solid #e0d7cc;
-    }
+    const stripWidth = photoWidth;
 
+    const stripHeight =
+        photoHeight * TOTAL_PHOTOS +
+        gap * (TOTAL_PHOTOS - 1) +
+        labelHeight;
 
-    h1 {
-        margin-top: 12px;
-    }
+    const output =
+        document.createElement("canvas");
 
+    output.width = stripWidth;
+    output.height = stripHeight;
 
-    .strip-wrapper {
-        min-height: 390px;
-    }
+    const context =
+        output.getContext("2d");
 
+    context.fillStyle = "#ffffff";
+    context.fillRect(
+        0,
+        0,
+        stripWidth,
+        stripHeight
+    );
 
-    .strip {
-        width: 175px;
-    }
+    let loaded = 0;
 
+    photos.forEach((photo, index) => {
 
-    .background-decoration {
-        opacity: 0.25;
-    }
+        const image =
+            new Image();
 
+        image.onload = () => {
+
+            const y =
+                index *
+                (photoHeight + gap);
+
+            context.save();
+
+            context.filter =
+                filterSettings[currentFilter];
+
+            context.drawImage(
+                image,
+                0,
+                y,
+                photoWidth,
+                photoHeight
+            );
+
+            context.restore();
+
+            loaded++;
+
+            if (loaded === photos.length) {
+
+                drawStripLabel(
+                    context,
+                    stripWidth,
+                    stripHeight,
+                    labelHeight
+                );
+
+                const link =
+                    document.createElement("a");
+
+                link.download =
+                    "charlie-photobooth.jpg";
+
+                link.href =
+                    output.toDataURL(
+                        "image/jpeg",
+                        0.95
+                    );
+
+                link.click();
+            }
+        };
+
+        image.src = photo;
+    });
 }
 
 
+// ===============================
+// STRIP LABEL
+// ===============================
 
-/* =========================
-   SMALL PHONES
-========================= */
+function drawStripLabel(
+    context,
+    width,
+    height,
+    labelHeight
+) {
 
-@media (max-width: 480px) {
+    context.fillStyle = "#ffffff";
 
-    .app {
-        padding: 0;
+    context.fillRect(
+        0,
+        height - labelHeight,
+        width,
+        labelHeight
+    );
+
+    context.fillStyle = "#222";
+
+    context.textAlign = "center";
+
+    context.textBaseline = "middle";
+
+    context.font =
+        "bold 34px Arial";
+
+    context.fillText(
+        "Charlie's portable photobooth",
+        width / 2,
+        height - labelHeight / 2
+    );
+}
+
+
+// ===============================
+// RESET
+// ===============================
+
+resetButton.addEventListener(
+    "click",
+    resetEverything
+);
+
+
+function resetEverything() {
+
+    photos = [];
+
+    pendingPhoto = null;
+    pendingImage = null;
+
+    currentFilter = "original";
+
+    cropEditor.style.display = "none";
+
+    downloadButton.disabled = true;
+
+    snapButton.disabled = true;
+
+    startButton.disabled = false;
+
+    snapButton.textContent =
+        "photo 1/4 📸";
+
+    status.textContent =
+        "uhm... camera eerst?";
+
+    error.textContent = "";
+
+    strip.innerHTML = `
+        <div class="empty-photo">PHOTO 1</div>
+        <div class="empty-photo">PHOTO 2</div>
+        <div class="empty-photo">PHOTO 3</div>
+        <div class="empty-photo">PHOTO 4</div>
+
+        <div class="strip-label">
+            Charlie's portable photobooth
+        </div>
+    `;
+
+    document
+        .querySelectorAll(".filter-button")
+        .forEach(button => {
+
+            button.classList.remove("active");
+
+            if (
+                button.dataset.filter === "original"
+            ) {
+                button.classList.add("active");
+            }
+        });
+
+    if (stream) {
+
+        stream
+            .getTracks()
+            .forEach(track => track.stop());
+
+        stream = null;
     }
 
+    video.srcObject = null;
 
-    .card {
-        width: 100%;
-
-        min-height: 100vh;
-
-        border: 0;
-
-        border-radius: 0;
-    }
-
-
-    .left {
-        padding: 20px;
-    }
-
-
-    .right {
-        padding:
-            28px 20px;
-    }
-
-
-    h1 {
-        font-size: 42px;
-    }
-
-
-    .controls {
-        flex-direction: column;
-    }
-
-
-    .controls .button {
-        width: 100%;
-    }
-
-
-    .filter-button {
-        padding:
-            7px 9px;
-
-        font-size: 10px;
-    }
-
-}
-
-
-/* =====================================================
-   CROP EDITOR
-===================================================== */
-
-.crop-editor {
-    display: none;
-    margin-top: 20px;
-    width: 100%;
-}
-
-.crop-editor.active {
-    display: block;
-}
-
-.crop-header {
-    text-align: center;
-    margin-bottom: 12px;
-}
-
-.crop-header h3 {
-    margin: 0 0 5px;
-    font-size: 20px;
-}
-
-.crop-header p {
-    margin: 0;
-    font-size: 13px;
-    opacity: 0.7;
-}
-
-.crop-area {
-    position: relative;
-    width: 100%;
-    aspect-ratio: 4 / 3;
-    overflow: hidden;
-    background: #eee;
-    border-radius: 14px;
-    cursor: grab;
-    touch-action: none;
-}
-
-.crop-area:active {
-    cursor: grabbing;
-}
-
-.crop-area img {
-    position: absolute;
-    max-width: none;
-    user-select: none;
-    -webkit-user-drag: none;
-    pointer-events: none;
-}
-
-.crop-controls {
-    display: flex;
-    gap: 10px;
-    margin-top: 12px;
-}
-
-.crop-controls .button {
-    flex: 1;
-}
-
-
-/* =====================================================
-   ZOOM CONTROL
-===================================================== */
-
-.zoom-control {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin: 12px 0;
-}
-
-.zoom-control span {
-    font-size: 22px;
-    line-height: 1;
-}
-
-.zoom-control input {
-    flex: 1;
-    cursor: pointer;
+    takingPhoto = false;
 }
