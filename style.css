@@ -1205,3 +1205,106 @@ body.dark-mode .crop-area {
 body.dark-mode .crop-header p {
     color: #c4bcb5;
 }
+
+.strip-color-section {
+    margin-top: 14px;
+}
+
+.strip-color-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+}
+
+.strip-color-button {
+    width: 34px;
+    height: 34px;
+
+    padding: 0;
+    border: 2px solid transparent;
+
+    border-radius: 50%;
+    cursor: pointer;
+
+    transition:
+        transform 0.2s ease,
+        border-color 0.2s ease;
+}
+
+.strip-color-button:hover {
+    transform: scale(1.08);
+}
+
+.strip-color-button.active {
+    border-color: #25211e;
+    transform: scale(1.08);
+}
+
+.strip-color-button[data-color="blue"] {
+    background: #8FD9FB
+}
+
+.strip-color-button[data-color="pink"] {
+    background: #F7B2D9
+}
+
+.strip-color-button[data-color="b&w"] {
+    background: #eeeeee
+}
+
+body.dark-mode .strip-color-button.active {
+    border-color: white;
+}
+
+/* =====================================================
+   DOWNLOAD TOAST
+===================================================== */
+
+.download-toast {
+    position: fixed;
+
+    left: 50%;
+    bottom: 30px;
+
+    transform: translate(-50%, 20px);
+
+    padding: 12px 18px;
+
+    border-radius: 999px;
+
+    background: #25211e;
+    color: white;
+
+    font-size: 13px;
+    font-weight: 700;
+
+    box-shadow:
+        0 10px 30px rgba(0, 0, 0, 0.2);
+
+    opacity: 0;
+    visibility: hidden;
+
+    pointer-events: none;
+
+    z-index: 99999;
+
+    transition:
+        opacity 0.3s ease,
+        transform 0.3s ease,
+        visibility 0.3s ease;
+}
+
+.download-toast.show {
+    opacity: 1;
+    visibility: visible;
+
+    transform: translate(-50%, 0);
+}
+
+
+/* DARK MODE */
+
+body.dark-mode .download-toast {
+    background: #f3eee9;
+    color: #25211e;
+}
