@@ -723,19 +723,12 @@ video {
 
     margin-bottom: 16px;
 
-    opacity: 0.4;
-
-    pointer-events: none;
-
-    transition:
-        opacity 0.25s ease;
-}
-
-
-.filters.ready {
     opacity: 1;
 
     pointer-events: auto;
+
+    transition:
+        opacity 0.25s ease;
 }
 
 
