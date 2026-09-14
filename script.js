@@ -48,7 +48,7 @@ let photos = [];
 
 let takingPhoto = false;
 
-let currentFilter = "original";
+let currentFilter = ["original"];
 
 let pendingPhoto = null;
 
@@ -156,8 +156,13 @@ function updateStrip() {
 
             image.src = photos[i];
 
-            image.style.filter =
-                filterSettings[currentFilter].css;
+            const combinedFilter = currentFilters.map(
+               filter => filterSettings[filter].css).join(" ");
+
+            image.style.setProperty(
+               "filter",
+               combinedFilter,
+               "important");
 
             strip.appendChild(image);
 
@@ -1250,34 +1255,58 @@ cropCancel.addEventListener(
 
 filterButtons.forEach(button => {
 
-    button.addEventListener(
-        "click",
-        () => {
+    button.addEventListener("click", () => {
 
-            currentFilter =
-                button.dataset.filter;
+        const filter = button.dataset.filter;
 
+        if (filter === "original") {
 
-            filterButtons.forEach(
-                otherButton => {
+            currentFilters = ["original"];
 
-                    otherButton.classList.remove(
-                        "active"
+            filterButtons.forEach(otherButton => {
+                otherButton.classList.remove("active");
+            });
+
+            button.classList.add("active");
+
+        } else {
+
+            currentFilters =
+                currentFilters.filter(
+                    f => f !== "original"
+                );
+
+            if (currentFilters.includes(filter)) {
+
+                currentFilters =
+                    currentFilters.filter(
+                        f => f !== filter
                     );
 
-                }
-            );
+                button.classList.remove("active");
 
+            } else {
 
-            button.classList.add(
-                "active"
-            );
+                currentFilters.push(filter);
 
+                button.classList.add("active");
+            }
 
-            updateStrip();
+            if (currentFilters.length === 0) {
 
+                currentFilters = ["original"];
+
+                document
+                    .querySelector('[data-filter="original"]')
+                    .classList.add("active");
+            }
         }
-    );
+
+        updateStrip();
+
+    });
+
+});
 
 });
 
