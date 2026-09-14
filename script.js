@@ -293,146 +293,108 @@ function wait(milliseconds) {
 ===================================================== */
 
 async function takePhoto() {
-
-    if (
-        takingPhoto ||
-        photos.length >= 4
-    ) {
-
+    if (takingPhoto || photos.length >= 4) {
         return;
-
     }
-
 
     takingPhoto = true;
-
     snapButton.disabled = true;
 
-
-    /* COUNTDOWN */
-
-    for (
-        let number = 3;
-        number > 0;
-        number--
-    ) {
-
+    // COUNTDOWN
+    for (let number = 3; number > 0; number--) {
         countdown.style.display = "grid";
-
         countdown.textContent = number;
-
         await wait(700);
-
     }
-
 
     countdown.textContent = "📸";
-
     await wait(180);
 
-
-    /* CAMERA SIZE */
-
+    // CAMERA SIZE
     const videoWidth = video.videoWidth;
-
     const videoHeight = video.videoHeight;
 
-
-    if (
-        !videoWidth ||
-        !videoHeight
-    ) {
-
+    if (!videoWidth || !videoHeight) {
         takingPhoto = false;
-
         snapButton.disabled = false;
-
         countdown.style.display = "none";
 
-        showError(
-            "Camera is not ready yet. Try again."
-        );
-
+        showError("Camera is not ready yet. Try again.");
         return;
-
     }
 
-
     /*
-       We always create a 4:3 photo.
+     * IMPORTANT:
+     *
+     * The camera preview uses:
+     *
+     * object-fit: cover
+     *
+     * and the camera container is 4:3.
+     *
+     * So here we calculate EXACTLY which part
+     * of the real camera image is visible in
+     * the preview.
+     */
 
-       This takes the normal camera image and
-       crops only the excess from the sides/top.
-    */
+    const previewWidth = video.clientWidth;
+    const previewHeight = video.clientHeight;
 
-    const targetRatio = 4 / 3;
+    const videoRatio = videoWidth / videoHeight;
+    const previewRatio = previewWidth / previewHeight;
 
-    const videoRatio =
-        videoWidth / videoHeight;
+    let sourceWidth;
+    let sourceHeight;
+    let sourceX;
+    let sourceY;
 
-
-    let cropWidth;
-    let cropHeight;
-
-    let cropXSource;
-    let cropYSource;
-
-
-    if (videoRatio > targetRatio) {
-
+    if (videoRatio > previewRatio) {
         /*
-           Camera is wider than 4:3.
-           Remove the extra sides.
-        */
+         * Video is wider than the preview.
+         * object-fit: cover removes the sides.
+         */
 
-        cropHeight = videoHeight;
+        sourceHeight = videoHeight;
+        sourceWidth = videoHeight * previewRatio;
 
-        cropWidth =
-            videoHeight * targetRatio;
-
-        cropXSource =
-            (videoWidth - cropWidth) / 2;
-
-        cropYSource = 0;
-
+        sourceX = (videoWidth - sourceWidth) / 2;
+        sourceY = 0;
 
     } else {
-
         /*
-           Camera is taller than 4:3.
-           Remove the extra top/bottom.
-        */
+         * Video is taller than the preview.
+         * object-fit: cover removes top/bottom.
+         */
 
-        cropWidth = videoWidth;
+        sourceWidth = videoWidth;
+        sourceHeight = videoWidth / previewRatio;
 
-        cropHeight =
-            videoWidth / targetRatio;
-
-        cropXSource = 0;
-
-        cropYSource =
-            (videoHeight - cropHeight) / 2;
-
+        sourceX = 0;
+        sourceY = (videoHeight - sourceHeight) / 2;
     }
 
+    /*
+     * Make the captured image the SAME SIZE RATIO
+     * as the actual camera preview.
+     *
+     * We use 900px wide so the final image
+     * still has plenty of quality.
+     */
 
-    /* CANVAS */
+    const outputWidth = 900;
+    const outputHeight = Math.round(
+        outputWidth / previewRatio
+    );
 
-    canvas.width =
-        Math.round(cropWidth);
+    canvas.width = outputWidth;
+    canvas.height = outputHeight;
 
-    canvas.height =
-        Math.round(cropHeight);
-
-
-    const context =
-        canvas.getContext("2d");
-
+    const context = canvas.getContext("2d");
 
     /*
-       Mirror the photo because the camera
-       is front-facing.
-    */
+     * Mirror the image exactly like the
+     * camera preview.
+     */
 
     context.save();
 
@@ -443,47 +405,43 @@ async function takePhoto() {
 
     context.scale(-1, 1);
 
-
     context.drawImage(
-
         video,
 
-        cropXSource,
-        cropYSource,
-        cropWidth,
-        cropHeight,
+        // SOURCE
+        sourceX,
+        sourceY,
+        sourceWidth,
+        sourceHeight,
 
+        // DESTINATION
         0,
         0,
         canvas.width,
         canvas.height
-
     );
-
 
     context.restore();
 
+    /*
+     * Save temporary photo.
+     */
 
-    /* SAVE TEMP PHOTO */
+    pendingPhoto = canvas.toDataURL(
+        "image/jpeg",
+        0.92
+    );
 
-    pendingPhoto =
-        canvas.toDataURL(
-            "image/jpeg",
-            0.92
-        );
-
-
-    /* OPEN CROP EDITOR */
+    /*
+     * Open crop editor.
+     */
 
     openCropEditor();
 
-
-    countdown.style.display =
-        "none";
+    countdown.style.display = "none";
 
     status.textContent =
         "kies welk stukje je wilt ♡";
-
 }
 
 
@@ -582,77 +540,49 @@ function openCropEditor() {
 ===================================================== */
 
 function setupCropImage() {
-
     if (
         !cropImage.naturalWidth ||
         !cropImage.naturalHeight
     ) {
-
         return;
-
     }
 
-
-    const areaWidth =
-        cropArea.clientWidth;
-
-    const areaHeight =
-        cropArea.clientHeight;
-
+    const areaWidth = cropArea.clientWidth;
+    const areaHeight = cropArea.clientHeight;
 
     /*
-       IMPORTANT:
+     * The crop editor should initially show
+     * the COMPLETE captured photo.
+     *
+     * Therefore we use MIN.
+     */
 
-       Use MIN here.
-
-       This means that at 1x the entire
-       4:3 image fits inside the 4:3 crop area.
-
-       Using MAX would make the image
-       unnecessarily zoomed in.
-    */
-
-    const fitScale =
-        Math.min(
-
-            areaWidth /
-                cropImage.naturalWidth,
-
-            areaHeight /
-                cropImage.naturalHeight
-
-        );
-
+    const fitScale = Math.min(
+        areaWidth / cropImage.naturalWidth,
+        areaHeight / cropImage.naturalHeight
+    );
 
     cropImageWidth =
-        cropImage.naturalWidth *
-        fitScale *
-        cropZoom;
-
+        cropImage.naturalWidth * fitScale * cropZoom;
 
     cropImageHeight =
-        cropImage.naturalHeight *
-        fitScale *
-        cropZoom;
-
+        cropImage.naturalHeight * fitScale * cropZoom;
 
     /*
-       At 1x center the entire image.
-    */
+     * ALWAYS center the image.
+     *
+     * This prevents the subject from suddenly
+     * moving up/down when opening the editor.
+     */
 
     cropX =
-        (areaWidth -
-            cropImageWidth) / 2;
+        (areaWidth - cropImageWidth) / 2;
 
     cropY =
-        (areaHeight -
-            cropImageHeight) / 2;
-
+        (areaHeight - cropImageHeight) / 2;
 
     limitCropPosition();
-
     applyCropPosition();
-
 }
 
 
@@ -1162,28 +1092,29 @@ function confirmCrop() {
     const finalCanvas =
         document.createElement("canvas");
 
-    finalCanvas.width = 900;
+    const finalWidth = 900;
 
-    finalCanvas.height = 675;
+    const finalHeight = Math.round(
+       finalWidth *
+       (areaHeight / areaWidth));
 
-
+    finalCanvas.width = finalWidth;
+    finalCanvas.height = finalHeight;
+   
     const context =
         finalCanvas.getContext("2d");
 
 
     context.drawImage(
-
         cropImage,
-
         sourceX,
         sourceY,
         sourceWidth,
         sourceHeight,
-
         0,
         0,
-        900,
-        675
+        finalWidth,
+        finalHeight
 
     );
 
