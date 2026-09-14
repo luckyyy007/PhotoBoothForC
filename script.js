@@ -1302,7 +1302,7 @@ downloadButton.addEventListener(
 
         const photoWidth = 900;
 
-        const photoHeight = 675;
+        const photoHeight = 1600;
 
         const spacing = 20;
 
