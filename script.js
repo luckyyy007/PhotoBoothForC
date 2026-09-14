@@ -23,6 +23,9 @@ const strip = document.getElementById("strip");
 const filtersContainer = document.getElementById("filters");
 const filterButtons = document.querySelectorAll(".filter-button");
 
+const stripColorButtons = document.querySelectorAll(".strip-color-button");
+
+const downloadToast = document.getElementById("downloadToast");
 
 /* =====================================================
    CROP EDITOR
@@ -49,6 +52,8 @@ let photos = [];
 let takingPhoto = false;
 
 let currentFilters = ["original"];
+
+let currentStripColor = "b&w";
 
 let pendingPhoto = null;
 
@@ -119,6 +124,12 @@ const filterSettings = {
 
 };
 
+const stripColors = {
+    blue: "#8FD9FB",
+    pink: "#F7B2D9",
+    bw: "#EEEEEE"
+}
+
 
 /* =====================================================
    ERROR HANDLING
@@ -147,6 +158,9 @@ function clearError() {
 function updateStrip() {
 
     strip.innerHTML = "";
+
+    strip.style.background =
+        stripColors[currentStripColor];
 
     for (let i = 0; i < 4; i++) {
 
@@ -1308,6 +1322,21 @@ filterButtons.forEach(button => {
 
 });
 
+stripColorButtons.forEach(button => {
+
+    button.addEventListener("click", () => {
+
+        currentStripColor = button.dataset.color;
+
+        stripColorButtons.forEach(otherButton => {
+            otherButton.classList.remove("active");
+        });
+        button.classList.add("active");
+
+        updateStrip();
+    });
+
+});
 
 /* =====================================================
    DOWNLOAD PHOTO STRIP
@@ -1369,7 +1398,7 @@ downloadButton.addEventListener(
            Background
         */
 
-        context.fillStyle = "#fffaf7";
+        context.fillStyle = stripColors[currentStripColor];
 
         context.fillRect(
             0,
@@ -1471,6 +1500,10 @@ downloadButton.addEventListener(
 
                         link.click();
 
+                        setTimeout(() => {
+                            showDownloadToast();
+                        }, 100);
+
                     }
 
                 };
@@ -1520,6 +1553,18 @@ function drawDownloadLabel(
 
 }
 
+function showDownloadToast() {
+
+    downloadToast.classList.add("show");
+
+    setTimeout(() => {
+
+        downloadToast.classList.remove("show");
+
+    }, 2500);
+}
+
+
 
 /* =====================================================
    RESET
@@ -1527,6 +1572,14 @@ function drawDownloadLabel(
 
 function resetPhotobooth() {
 
+    currentStripColor = "bw";
+
+    stripColorButtons.forEach(button => {
+
+        button.classList.remove("active");
+    });
+
+    document.querySelector('.strip-color-button[data-color="bw"]').classList.add("active");
     /*
        Stop camera.
     */
