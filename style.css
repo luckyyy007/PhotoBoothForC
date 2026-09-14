@@ -944,3 +944,89 @@ video {
     }
 
 }
+
+
+/* =====================================================
+   CROP EDITOR
+===================================================== */
+
+.crop-editor {
+    display: none;
+    margin-top: 20px;
+    width: 100%;
+}
+
+.crop-editor.active {
+    display: block;
+}
+
+.crop-header {
+    text-align: center;
+    margin-bottom: 12px;
+}
+
+.crop-header h3 {
+    margin: 0 0 5px;
+    font-size: 20px;
+}
+
+.crop-header p {
+    margin: 0;
+    font-size: 13px;
+    opacity: 0.7;
+}
+
+.crop-area {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    background: #eee;
+    border-radius: 14px;
+    cursor: grab;
+    touch-action: none;
+}
+
+.crop-area:active {
+    cursor: grabbing;
+}
+
+.crop-area img {
+    position: absolute;
+    max-width: none;
+    user-select: none;
+    -webkit-user-drag: none;
+    pointer-events: none;
+}
+
+.crop-controls {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.crop-controls .button {
+    flex: 1;
+}
+
+
+/* =====================================================
+   ZOOM CONTROL
+===================================================== */
+
+.zoom-control {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 12px 0;
+}
+
+.zoom-control span {
+    font-size: 22px;
+    line-height: 1;
+}
+
+.zoom-control input {
+    flex: 1;
+    cursor: pointer;
+}
