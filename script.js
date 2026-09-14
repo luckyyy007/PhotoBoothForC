@@ -1,6 +1,5 @@
 /* =====================================================
-   SNAPSTRIP
-   Digital Photobooth
+   CHARLIE'S PORTABLE PHOTOBOOTH
 ===================================================== */
 
 
@@ -8,42 +7,35 @@
    ELEMENTS
 ===================================================== */
 
-const video =
-    document.getElementById("video");
+const video = document.getElementById("video");
+const canvas = document.getElementById("photoCanvas");
 
-const canvas =
-    document.getElementById("photoCanvas");
+const countdown = document.getElementById("countdown");
+const status = document.getElementById("status");
+const error = document.getElementById("error");
 
-const countdown =
-    document.getElementById("countdown");
+const startButton = document.getElementById("start");
+const snapButton = document.getElementById("snap");
+const resetButton = document.getElementById("reset");
+const downloadButton = document.getElementById("download");
 
-const status =
-    document.getElementById("status");
+const strip = document.getElementById("strip");
+const filtersContainer = document.getElementById("filters");
+const filterButtons = document.querySelectorAll(".filter-button");
 
-const error =
-    document.getElementById("error");
 
-const startButton =
-    document.getElementById("start");
+/* =====================================================
+   CROP EDITOR
+===================================================== */
 
-const snapButton =
-    document.getElementById("snap");
+const cropEditor = document.getElementById("cropEditor");
+const cropArea = document.getElementById("cropArea");
+const cropImage = document.getElementById("cropImage");
 
-const resetButton =
-    document.getElementById("reset");
+const cropConfirm = document.getElementById("cropConfirm");
+const cropCancel = document.getElementById("cropCancel");
 
-const downloadButton =
-    document.getElementById("download");
-
-const strip =
-    document.getElementById("strip");
-
-const filtersContainer =
-    document.getElementById("filters");
-
-const filterButtons =
-    document.querySelectorAll(".filter-button");
-
+const zoomSlider = document.getElementById("zoomSlider");
 
 
 /* =====================================================
@@ -58,6 +50,26 @@ let takingPhoto = false;
 
 let currentFilter = "original";
 
+let pendingPhoto = null;
+
+
+/* CROP STATE */
+
+let cropZoom = 1;
+
+let cropX = 0;
+let cropY = 0;
+
+let cropImageWidth = 0;
+let cropImageHeight = 0;
+
+let dragging = false;
+
+let dragStartX = 0;
+let dragStartY = 0;
+
+let dragStartCropX = 0;
+let dragStartCropY = 0;
 
 
 /* =====================================================
@@ -70,7 +82,6 @@ const filterSettings = {
         css: "none"
     },
 
-
     vintage: {
         css:
             "sepia(0.45) " +
@@ -78,13 +89,11 @@ const filterSettings = {
             "saturate(0.75)"
     },
 
-
     bw: {
         css:
             "grayscale(1) " +
             "contrast(1.08)"
     },
-
 
     warm: {
         css:
@@ -93,18 +102,12 @@ const filterSettings = {
             "contrast(0.95)"
     },
 
-
     cool: {
         css:
             "saturate(0.85) " +
             "hue-rotate(12deg) " +
             "contrast(1.05)"
     },
-
-
-    /*
-       Retro digital photobooth look
-    */
 
     photobooth: {
         css:
@@ -117,114 +120,85 @@ const filterSettings = {
 };
 
 
-
 /* =====================================================
    ERROR HANDLING
 ===================================================== */
 
 function showError(message) {
 
-    error.textContent =
-        message;
-
-    error.style.display =
-        "block";
+    error.textContent = message;
+    error.style.display = "block";
 
 }
 
 
 function clearError() {
 
-    error.style.display =
-        "none";
+    error.textContent = "";
+    error.style.display = "none";
 
 }
 
 
-
 /* =====================================================
-   UPDATE STRIP
+   UPDATE PHOTO STRIP
 ===================================================== */
 
 function updateStrip() {
 
     strip.innerHTML = "";
 
-
-    for (
-        let i = 0;
-        i < 4;
-        i++
-    ) {
+    for (let i = 0; i < 4; i++) {
 
         if (photos[i]) {
 
-            const image =
-                document.createElement("img");
+            const image = document.createElement("img");
 
-
-            image.src =
-                photos[i];
-
+            image.src = photos[i];
 
             image.style.filter =
-                filterSettings[
-                    currentFilter
-                ].css;
+                filterSettings[currentFilter].css;
 
+            strip.appendChild(image);
 
-            strip.appendChild(
-                image
-            );
+        } else {
 
-        }
+            const empty = document.createElement("div");
 
-        else {
+            empty.className = "empty-photo";
 
-            const empty =
-                document.createElement("div");
+            empty.textContent = `PHOTO ${i + 1}`;
 
-
-            empty.className =
-                "empty-photo";
-
-
-            empty.textContent =
-                `PHOTO ${i + 1}`;
-
-
-            strip.appendChild(
-                empty
-            );
+            strip.appendChild(empty);
 
         }
 
     }
 
 
-    const label =
-        document.createElement("div");
+    const label = document.createElement("div");
 
-
-    label.className =
-        "strip-label";
-
+    label.className = "strip-label";
 
     label.textContent =
-        "SNAPSTRIP • 2026";
+        "Charlie's portable photobooth";
+
+    strip.appendChild(label);
 
 
-    strip.appendChild(
-        label
-    );
+    if (photos.length === 4) {
+
+        downloadButton.disabled = false;
+
+    } else {
+
+        downloadButton.disabled = true;
+
+    }
 
 }
 
 
-
-/* =====================================================
-   START CAMERA
-===================================================== */
 /* =====================================================
    START CAMERA
 ===================================================== */
@@ -232,7 +206,6 @@ function updateStrip() {
 async function startCamera() {
 
     clearError();
-
 
     try {
 
@@ -249,49 +222,42 @@ async function startCamera() {
 
 
         cameraStream =
-            await navigator.mediaDevices
-                .getUserMedia({
+            await navigator.mediaDevices.getUserMedia({
 
-                    video: {
+                video: {
 
-                        facingMode: "user",
+                    facingMode: "user",
 
-                        width: {
-                            ideal: 1280
-                        },
-
-                        height: {
-                            ideal: 960
-                        }
-
+                    width: {
+                        ideal: 1280
                     },
 
-                    audio: false
+                    height: {
+                        ideal: 960
+                    }
 
-                });
+                },
+
+                audio: false
+
+            });
 
 
-        video.srcObject =
-            cameraStream;
+        video.srcObject = cameraStream;
 
 
         status.textContent =
-            "Camera ready";
+            "camera ready ♡";
 
 
-        startButton.disabled =
-            true;
+        startButton.disabled = true;
+
+        snapButton.disabled = false;
 
 
-        snapButton.disabled =
-            false;
-
-    }
-
-    catch (err) {
+    } catch (err) {
 
         console.error(err);
-
 
         showError(
             "Could not access the camera. " +
@@ -299,14 +265,12 @@ async function startCamera() {
             "and use HTTPS or localhost."
         );
 
-
         status.textContent =
-            "Camera unavailable";
+            "camera unavailable";
 
     }
 
 }
-
 
 
 /* =====================================================
@@ -315,37 +279,37 @@ async function startCamera() {
 
 function wait(milliseconds) {
 
-    return new Promise(
-        resolve =>
-            setTimeout(
-                resolve,
-                milliseconds
-            )
-    );
+    return new Promise(resolve => {
+
+        setTimeout(resolve, milliseconds);
+
+    });
 
 }
-
 
 
 /* =====================================================
    TAKE PHOTO
 ===================================================== */
+
 async function takePhoto() {
 
     if (
         takingPhoto ||
         photos.length >= 4
     ) {
+
         return;
+
     }
 
+
     takingPhoto = true;
+
     snapButton.disabled = true;
 
 
-    /* =========================
-       COUNTDOWN
-    ========================= */
+    /* COUNTDOWN */
 
     for (
         let number = 3;
@@ -354,31 +318,52 @@ async function takePhoto() {
     ) {
 
         countdown.style.display = "grid";
+
         countdown.textContent = number;
 
         await wait(700);
+
     }
+
 
     countdown.textContent = "📸";
 
     await wait(180);
 
 
-    /* =========================
-       CAMERA SIZE
-    ========================= */
+    /* CAMERA SIZE */
 
-    const videoWidth =
-        video.videoWidth;
+    const videoWidth = video.videoWidth;
 
-    const videoHeight =
-        video.videoHeight;
+    const videoHeight = video.videoHeight;
 
 
-    /* =========================
-       FORCE SAME 4:3 CROP
-       AS CAMERA PREVIEW
-    ========================= */
+    if (
+        !videoWidth ||
+        !videoHeight
+    ) {
+
+        takingPhoto = false;
+
+        snapButton.disabled = false;
+
+        countdown.style.display = "none";
+
+        showError(
+            "Camera is not ready yet. Try again."
+        );
+
+        return;
+
+    }
+
+
+    /*
+       We always create a 4:3 photo.
+
+       This takes the normal camera image and
+       crops only the excess from the sides/top.
+    */
 
     const targetRatio = 4 / 3;
 
@@ -389,57 +374,49 @@ async function takePhoto() {
     let cropWidth;
     let cropHeight;
 
-    let cropX;
-    let cropY;
+    let cropXSource;
+    let cropYSource;
 
 
     if (videoRatio > targetRatio) {
 
         /*
-         Camera is wider than 4:3.
-
-         Keep the full height.
-         Remove equal amounts
-         from left and right.
+           Camera is wider than 4:3.
+           Remove the extra sides.
         */
 
-        cropHeight =
-            videoHeight;
+        cropHeight = videoHeight;
 
         cropWidth =
             videoHeight * targetRatio;
 
-        cropX =
+        cropXSource =
             (videoWidth - cropWidth) / 2;
 
-        cropY = 0;
+        cropYSource = 0;
+
 
     } else {
 
         /*
-         Camera is taller than 4:3.
-
-         Keep the full width.
-         Remove equal amounts
-         from top and bottom.
+           Camera is taller than 4:3.
+           Remove the extra top/bottom.
         */
 
-        cropWidth =
-            videoWidth;
+        cropWidth = videoWidth;
 
         cropHeight =
             videoWidth / targetRatio;
 
-        cropX = 0;
+        cropXSource = 0;
 
-        cropY =
+        cropYSource =
             (videoHeight - cropHeight) / 2;
+
     }
 
 
-    /* =========================
-       CREATE PHOTO
-    ========================= */
+    /* CANVAS */
 
     canvas.width =
         Math.round(cropWidth);
@@ -453,8 +430,8 @@ async function takePhoto() {
 
 
     /*
-        Mirror the photo because
-        the preview is mirrored.
+       Mirror the photo because the camera
+       is front-facing.
     */
 
     context.save();
@@ -464,370 +441,1038 @@ async function takePhoto() {
         0
     );
 
-    context.scale(
-        -1,
-        1
-    );
+    context.scale(-1, 1);
 
-
-    /*
-        IMPORTANT:
-        This is the EXACT same
-        center 4:3 crop that the
-        preview shows.
-    */
 
     context.drawImage(
 
         video,
 
-        cropX,
-        cropY,
-
+        cropXSource,
+        cropYSource,
         cropWidth,
         cropHeight,
 
         0,
         0,
-
         canvas.width,
         canvas.height
+
     );
 
 
     context.restore();
 
 
-    /* =========================
-       SAVE PHOTO
-    ========================= */
+    /* SAVE TEMP PHOTO */
 
-    const image =
+    pendingPhoto =
         canvas.toDataURL(
             "image/jpeg",
             0.92
         );
 
 
-    photos.push(image);
+    /* OPEN CROP EDITOR */
 
-
-    /* =========================
-       UPDATE STRIP
-    ========================= */
-
-    updateStrip();
+    openCropEditor();
 
 
     countdown.style.display =
         "none";
 
-
-    /* =========================
-       PROGRESS
-    ========================= */
-
-    if (
-        photos.length < 4
-    ) {
-
-        snapButton.textContent =
-            `Take photo ${photos.length + 1}/4`;
-
-        snapButton.disabled =
-            false;
-
-        status.textContent =
-            `${photos.length} of 4 photos taken`;
-
-    } else {
-
-        snapButton.textContent =
-            "Strip complete";
-
-        status.textContent =
-            "Your strip is ready ✨";
-
-        downloadButton.disabled =
-            false;
-
-        filtersContainer.classList.add(
-            "ready"
-        );
-    }
-
-
-    takingPhoto = false;
-}
-
-
-/* =====================================================
-   APPLY FILTER
-===================================================== */
-
-function applyFilter(filterName) {
-
-    currentFilter =
-        filterName;
-
-
-    /*
-       Update active button
-    */
-
-    filterButtons.forEach(
-        button => {
-
-            button.classList.toggle(
-
-                "active",
-
-                button.dataset.filter ===
-                filterName
-
-            );
-
-        }
-    );
-
-
-    /*
-       Re-render strip
-    */
-
-    updateStrip();
-
-}
-
-
-
-/* =====================================================
-   RESET
-===================================================== */
-
-function reset() {
-
-    photos = [];
-
-    currentFilter =
-        "original";
-
-
-    /*
-       Reset strip
-    */
-
-    updateStrip();
-
-
-    /*
-       Reset filter buttons
-    */
-
-    filterButtons.forEach(
-        button => {
-
-            button.classList.toggle(
-
-                "active",
-
-                button.dataset.filter ===
-                "original"
-
-            );
-
-        }
-    );
-
-
-    /*
-       Disable filters
-    */
-
-    filtersContainer.classList.remove(
-        "ready"
-    );
-
-
-    /*
-       Reset buttons
-    */
-
-    snapButton.textContent =
-        "Take photo 1/4";
-
-
-    snapButton.disabled =
-        !cameraStream;
-
-
-    downloadButton.disabled =
-        true;
-
-
-    /*
-       Reset status
-    */
-
     status.textContent =
-        cameraStream
-            ? "Camera ready"
-            : "Camera not started";
-
-
-    clearError();
+        "kies welk stukje je wilt ♡";
 
 }
 
 
-
 /* =====================================================
-   DOWNLOAD STRIP
+   OPEN CROP EDITOR
 ===================================================== */
 
-function downloadStrip() {
+function openCropEditor() {
 
-    if (
-        photos.length !== 4
-    ) {
+    if (!pendingPhoto) {
         return;
     }
 
 
-
-    /*
-       Dimensions
-    */
-
-    const width =
-        900;
+    cropEditor.style.display =
+        "block";
 
 
-    const photoHeight =
-        675;
-
-
-    const padding =
-        42;
-
-
-    const gap =
-        24;
-
-
-    const labelHeight =
-        72;
-
+    cropImage.src =
+        pendingPhoto;
 
 
     /*
-       Output canvas
+       Always start at 1x.
+
+       1x = the complete 4:3 photo
+       2x = zoomed in
     */
 
-    const output =
+    cropZoom = 1;
+
+
+    if (zoomSlider) {
+
+        zoomSlider.value = "1";
+
+    }
+
+
+    /*
+       Reset position.
+    */
+
+    cropX = 0;
+    cropY = 0;
+
+
+    /*
+       Hide camera controls while editing.
+    */
+
+    snapButton.style.display =
+        "none";
+
+    resetButton.style.display =
+        "none";
+
+
+    /*
+       Wait until image is loaded.
+    */
+
+    if (cropImage.complete) {
+
+        setupCropImage();
+
+    } else {
+
+        cropImage.onload =
+            setupCropImage;
+
+    }
+
+
+    /*
+       Scroll editor into view.
+    */
+
+    setTimeout(() => {
+
+        cropEditor.scrollIntoView({
+
+            behavior: "smooth",
+
+            block: "center"
+
+        });
+
+    }, 50);
+
+}
+
+
+/* =====================================================
+   SETUP CROP IMAGE
+===================================================== */
+
+function setupCropImage() {
+
+    if (
+        !cropImage.naturalWidth ||
+        !cropImage.naturalHeight
+    ) {
+
+        return;
+
+    }
+
+
+    const areaWidth =
+        cropArea.clientWidth;
+
+    const areaHeight =
+        cropArea.clientHeight;
+
+
+    /*
+       IMPORTANT:
+
+       Use MIN here.
+
+       This means that at 1x the entire
+       4:3 image fits inside the 4:3 crop area.
+
+       Using MAX would make the image
+       unnecessarily zoomed in.
+    */
+
+    const fitScale =
+        Math.min(
+
+            areaWidth /
+                cropImage.naturalWidth,
+
+            areaHeight /
+                cropImage.naturalHeight
+
+        );
+
+
+    cropImageWidth =
+        cropImage.naturalWidth *
+        fitScale *
+        cropZoom;
+
+
+    cropImageHeight =
+        cropImage.naturalHeight *
+        fitScale *
+        cropZoom;
+
+
+    /*
+       At 1x center the entire image.
+    */
+
+    cropX =
+        (areaWidth -
+            cropImageWidth) / 2;
+
+    cropY =
+        (areaHeight -
+            cropImageHeight) / 2;
+
+
+    limitCropPosition();
+
+    applyCropPosition();
+
+}
+
+
+/* =====================================================
+   UPDATE CROP IMAGE SIZE
+===================================================== */
+
+function updateCropZoom() {
+
+    if (
+        !cropImage.naturalWidth ||
+        !cropImage.naturalHeight
+    ) {
+
+        return;
+
+    }
+
+
+    /*
+       Remember the current center of
+       the image before changing zoom.
+    */
+
+    const areaWidth =
+        cropArea.clientWidth;
+
+    const areaHeight =
+        cropArea.clientHeight;
+
+
+    const centerX =
+        areaWidth / 2;
+
+    const centerY =
+        areaHeight / 2;
+
+
+    const imageCenterX =
+        cropX +
+        cropImageWidth / 2;
+
+    const imageCenterY =
+        cropY +
+        cropImageHeight / 2;
+
+
+    /*
+       Calculate the base size again.
+    */
+
+    const fitScale =
+        Math.min(
+
+            areaWidth /
+                cropImage.naturalWidth,
+
+            areaHeight /
+                cropImage.naturalHeight
+
+        );
+
+
+    cropImageWidth =
+        cropImage.naturalWidth *
+        fitScale *
+        cropZoom;
+
+
+    cropImageHeight =
+        cropImage.naturalHeight *
+        fitScale *
+        cropZoom;
+
+
+    /*
+       Keep the same relative center
+       when zooming.
+    */
+
+    const oldCenterX =
+        imageCenterX;
+
+    const oldCenterY =
+        imageCenterY;
+
+
+    const relativeX =
+        oldCenterX / areaWidth;
+
+    const relativeY =
+        oldCenterY / areaHeight;
+
+
+    cropX =
+        relativeX * areaWidth -
+        cropImageWidth / 2;
+
+    cropY =
+        relativeY * areaHeight -
+        cropImageHeight / 2;
+
+
+    /*
+       If we're at 1x, always center the
+       full photo perfectly.
+    */
+
+    if (cropZoom === 1) {
+
+        cropX =
+            (areaWidth -
+                cropImageWidth) / 2;
+
+        cropY =
+            (areaHeight -
+                cropImageHeight) / 2;
+
+    }
+
+
+    limitCropPosition();
+
+    applyCropPosition();
+
+}
+
+
+/* =====================================================
+   LIMIT CROP POSITION
+===================================================== */
+
+function limitCropPosition() {
+
+    const areaWidth =
+        cropArea.clientWidth;
+
+    const areaHeight =
+        cropArea.clientHeight;
+
+
+    /*
+       Don't allow empty space around
+       the photo when zoomed in.
+    */
+
+    if (
+        cropImageWidth >= areaWidth
+    ) {
+
+        const minX =
+            areaWidth -
+            cropImageWidth;
+
+        const maxX = 0;
+
+        cropX =
+            Math.max(
+                minX,
+                Math.min(maxX, cropX)
+            );
+
+    } else {
+
+        /*
+           At 1x this should not normally
+           happen because both are 4:3.
+        */
+
+        cropX =
+            (areaWidth -
+                cropImageWidth) / 2;
+
+    }
+
+
+    if (
+        cropImageHeight >= areaHeight
+    ) {
+
+        const minY =
+            areaHeight -
+            cropImageHeight;
+
+        const maxY = 0;
+
+        cropY =
+            Math.max(
+                minY,
+                Math.min(maxY, cropY)
+            );
+
+    } else {
+
+        cropY =
+            (areaHeight -
+                cropImageHeight) / 2;
+
+    }
+
+}
+
+
+/* =====================================================
+   APPLY IMAGE POSITION
+===================================================== */
+
+function applyCropPosition() {
+
+    cropImage.style.width =
+        `${cropImageWidth}px`;
+
+    cropImage.style.height =
+        `${cropImageHeight}px`;
+
+    cropImage.style.left =
+        `${cropX}px`;
+
+    cropImage.style.top =
+        `${cropY}px`;
+
+}
+
+
+/* =====================================================
+   ZOOM SLIDER
+===================================================== */
+
+if (zoomSlider) {
+
+    zoomSlider.addEventListener(
+        "input",
+        () => {
+
+            cropZoom =
+                parseFloat(
+                    zoomSlider.value
+                );
+
+
+            updateCropZoom();
+
+        }
+    );
+
+}
+
+
+/* =====================================================
+   CROP DRAGGING
+===================================================== */
+
+
+/* ---------- MOUSE ---------- */
+
+cropArea.addEventListener(
+    "mousedown",
+    event => {
+
+        dragging = true;
+
+
+        dragStartX =
+            event.clientX;
+
+        dragStartY =
+            event.clientY;
+
+
+        dragStartCropX =
+            cropX;
+
+        dragStartCropY =
+            cropY;
+
+
+        cropArea.style.cursor =
+            "grabbing";
+
+    }
+);
+
+
+window.addEventListener(
+    "mousemove",
+    event => {
+
+        if (!dragging) {
+            return;
+        }
+
+
+        const movementX =
+            event.clientX -
+            dragStartX;
+
+        const movementY =
+            event.clientY -
+            dragStartY;
+
+
+        cropX =
+            dragStartCropX +
+            movementX;
+
+        cropY =
+            dragStartCropY +
+            movementY;
+
+
+        limitCropPosition();
+
+        applyCropPosition();
+
+    }
+);
+
+
+window.addEventListener(
+    "mouseup",
+    () => {
+
+        dragging = false;
+
+        cropArea.style.cursor =
+            "grab";
+
+    }
+);
+
+
+/* ---------- TOUCH ---------- */
+
+cropArea.addEventListener(
+    "touchstart",
+    event => {
+
+        if (
+            !event.touches ||
+            !event.touches[0]
+        ) {
+
+            return;
+
+        }
+
+
+        dragging = true;
+
+
+        dragStartX =
+            event.touches[0].clientX;
+
+        dragStartY =
+            event.touches[0].clientY;
+
+
+        dragStartCropX =
+            cropX;
+
+        dragStartCropY =
+            cropY;
+
+    },
+    {
+        passive: true
+    }
+);
+
+
+cropArea.addEventListener(
+    "touchmove",
+    event => {
+
+        if (
+            !dragging ||
+            !event.touches ||
+            !event.touches[0]
+        ) {
+
+            return;
+
+        }
+
+
+        const movementX =
+            event.touches[0].clientX -
+            dragStartX;
+
+        const movementY =
+            event.touches[0].clientY -
+            dragStartY;
+
+
+        cropX =
+            dragStartCropX +
+            movementX;
+
+        cropY =
+            dragStartCropY +
+            movementY;
+
+
+        limitCropPosition();
+
+        applyCropPosition();
+
+    },
+    {
+        passive: true
+    }
+);
+
+
+cropArea.addEventListener(
+    "touchend",
+    () => {
+
+        dragging = false;
+
+    }
+);
+
+
+/* =====================================================
+   CONFIRM CROP
+===================================================== */
+
+function confirmCrop() {
+
+    if (!pendingPhoto) {
+        return;
+    }
+
+
+    const areaWidth =
+        cropArea.clientWidth;
+
+    const areaHeight =
+        cropArea.clientHeight;
+
+
+    /*
+       The crop editor displays the image
+       at this scale.
+
+       Convert the visible crop area back
+       to coordinates in the original image.
+    */
+
+    const scaleX =
+        cropImage.naturalWidth /
+        cropImageWidth;
+
+    const scaleY =
+        cropImage.naturalHeight /
+        cropImageHeight;
+
+
+    let sourceX =
+        -cropX * scaleX;
+
+    let sourceY =
+        -cropY * scaleY;
+
+
+    let sourceWidth =
+        areaWidth * scaleX;
+
+    let sourceHeight =
+        areaHeight * scaleY;
+
+
+    /*
+       Keep the source rectangle inside
+       the original image.
+    */
+
+    sourceX =
+        Math.max(
+            0,
+            Math.min(
+                cropImage.naturalWidth -
+                    sourceWidth,
+                sourceX
+            )
+        );
+
+
+    sourceY =
+        Math.max(
+            0,
+            Math.min(
+                cropImage.naturalHeight -
+                    sourceHeight,
+                sourceY
+            )
+        );
+
+
+    /*
+       Create final photo.
+
+       900 × 675 = 4:3
+    */
+
+    const finalCanvas =
         document.createElement("canvas");
 
+    finalCanvas.width = 900;
 
-    output.width =
-        width;
-
-
-    output.height =
-        padding +
-        photoHeight * 4 +
-        gap * 3 +
-        labelHeight +
-        padding;
-
+    finalCanvas.height = 675;
 
 
     const context =
-        output.getContext("2d");
+        finalCanvas.getContext("2d");
 
 
+    context.drawImage(
 
-    /*
-       White background
-    */
+        cropImage,
 
-    context.fillStyle =
-        "#ffffff";
-
-
-    context.fillRect(
+        sourceX,
+        sourceY,
+        sourceWidth,
+        sourceHeight,
 
         0,
         0,
-        output.width,
-        output.height
+        900,
+        675
 
     );
 
 
-
-    let loadedImages =
-        0;
-
+    const finalPhoto =
+        finalCanvas.toDataURL(
+            "image/jpeg",
+            0.92
+        );
 
 
     /*
-       Load photos
+       Save photo.
     */
 
-    photos.forEach(
-        (photo, index) => {
-
-            const image =
-                new Image();
+    photos.push(finalPhoto);
 
 
-            image.onload =
-                () => {
+    /*
+       Clear temporary photo.
+    */
 
-                    /*
-                       Save canvas state
-                    */
+    pendingPhoto = null;
+
+
+    /*
+       Close editor.
+    */
+
+    cropEditor.style.display =
+        "none";
+
+
+    /*
+       Show camera controls again.
+    */
+
+    snapButton.style.display =
+        "";
+
+    resetButton.style.display =
+        "";
+
+
+    /*
+       Update interface.
+    */
+
+    updateStrip();
+
+
+    if (photos.length < 4) {
+
+        snapButton.disabled = false;
+
+        snapButton.textContent =
+            `photo ${photos.length + 1}/4 📸`;
+
+        status.textContent =
+            `foto ${photos.length}/4 klaar ♡`;
+
+    } else {
+
+        snapButton.disabled = true;
+
+        snapButton.textContent =
+            "alle foto's klaar ♡";
+
+        status.textContent =
+            "je strip is klaar ✨";
+
+    }
+
+    takingPhoto = false;
+
+}
+
+
+/* =====================================================
+   CANCEL CROP
+===================================================== */
+
+function cancelCrop() {
+
+    pendingPhoto = null;
+
+    takingPhoto = false;
+
+
+    cropEditor.style.display =
+        "none";
+
+
+    snapButton.style.display =
+        "";
+
+    resetButton.style.display =
+        "";
+
+
+    snapButton.disabled = false;
+
+
+    snapButton.textContent =
+        `photo ${photos.length + 1}/4 📸`;
+
+
+    status.textContent =
+        "opnieuw proberen 📸";
+
+}
+
+
+/* =====================================================
+   CROP BUTTONS
+===================================================== */
+
+cropConfirm.addEventListener(
+    "click",
+    confirmCrop
+);
+
+
+cropCancel.addEventListener(
+    "click",
+    cancelCrop
+);
+
+
+/* =====================================================
+   FILTER BUTTONS
+===================================================== */
+
+filterButtons.forEach(button => {
+
+    button.addEventListener(
+        "click",
+        () => {
+
+            currentFilter =
+                button.dataset.filter;
+
+
+            filterButtons.forEach(
+                otherButton => {
+
+                    otherButton.classList.remove(
+                        "active"
+                    );
+
+                }
+            );
+
+
+            button.classList.add(
+                "active"
+            );
+
+
+            updateStrip();
+
+        }
+    );
+
+});
+
+
+/* =====================================================
+   DOWNLOAD PHOTO STRIP
+===================================================== */
+
+downloadButton.addEventListener(
+    "click",
+    () => {
+
+        if (photos.length !== 4) {
+            return;
+        }
+
+
+        /*
+           Create a new canvas for the
+           complete vertical strip.
+        */
+
+        const photoWidth = 900;
+
+        const photoHeight = 675;
+
+        const spacing = 20;
+
+        const topPadding = 40;
+
+        const bottomPadding = 100;
+
+
+        const stripWidth =
+            photoWidth +
+            spacing * 2;
+
+
+        const stripHeight =
+            topPadding +
+            (photoHeight * 4) +
+            (spacing * 3) +
+            bottomPadding;
+
+
+        const downloadCanvas =
+            document.createElement("canvas");
+
+
+        downloadCanvas.width =
+            stripWidth;
+
+        downloadCanvas.height =
+            stripHeight;
+
+
+        const context =
+            downloadCanvas.getContext("2d");
+
+
+        /*
+           Background
+        */
+
+        context.fillStyle = "#fffaf7";
+
+        context.fillRect(
+            0,
+            0,
+            stripWidth,
+            stripHeight
+        );
+
+
+        /*
+           Draw each photo.
+        */
+
+        let loadedImages = 0;
+
+
+        photos.forEach(
+            (photo, index) => {
+
+                const image =
+                    new Image();
+
+
+                image.onload = () => {
+
+                    const y =
+                        topPadding +
+                        index *
+                        (photoHeight + spacing);
+
 
                     context.save();
 
 
                     /*
                        Apply selected filter
+                       to the final downloaded strip.
                     */
 
-                    context.filter =
+                    const filter =
                         filterSettings[
                             currentFilter
                         ].css;
 
 
-                    /*
-                       Draw photo
+                    context.filter =
+                        filter;
 
-                       No mirroring here either.
-                    */
 
                     context.drawImage(
 
                         image,
 
-                        padding,
+                        spacing,
+                        y,
 
-                        padding +
-                        index *
-                        (photoHeight + gap),
-
-                        width -
-                        padding * 2,
-
+                        photoWidth,
                         photoHeight
 
                     );
 
-
-                    /*
-                       Restore state
-                    */
 
                     context.restore();
 
@@ -835,60 +1480,21 @@ function downloadStrip() {
                     loadedImages++;
 
 
-
                     /*
-                       All four loaded
+                       Once all 4 images are
+                       loaded, download them.
                     */
 
                     if (
                         loadedImages === 4
                     ) {
 
-                        /*
-                           Label
-                        */
-
-                        context.fillStyle =
-                            "#77706a";
-
-
-                        context.font =
-                            "600 24px system-ui";
-
-
-                        context.textAlign =
-                            "center";
-
-
-                        context.fillText(
-
-                            "SNAPSTRIP • 2026",
-
-                            width / 2,
-
-                            output.height - 34
-
+                        drawDownloadLabel(
+                            context,
+                            stripWidth,
+                            stripHeight
                         );
 
-
-
-                        /*
-                           Convert to JPEG
-                        */
-
-                        const imageURL =
-                            output.toDataURL(
-
-                                "image/jpeg",
-
-                                0.95
-
-                            );
-
-
-                        /*
-                           Download
-                        */
 
                         const link =
                             document.createElement(
@@ -897,11 +1503,14 @@ function downloadStrip() {
 
 
                         link.download =
-                            `snapstrip-${currentFilter}.jpg`;
+                            "charlies-photobooth.jpg";
 
 
                         link.href =
-                            imageURL;
+                            downloadCanvas.toDataURL(
+                                "image/jpeg",
+                                0.95
+                            );
 
 
                         link.click();
@@ -911,18 +1520,190 @@ function downloadStrip() {
                 };
 
 
-            image.src =
-                photo;
+                image.src = photo;
 
-        }
+            }
+
+        );
+
+    }
+);
+
+
+/* =====================================================
+   DOWNLOAD LABEL
+===================================================== */
+
+function drawDownloadLabel(
+    context,
+    width,
+    height
+) {
+
+    context.fillStyle =
+        "#3d3030";
+
+
+    context.textAlign =
+        "center";
+
+
+    context.font =
+        "bold 28px Arial";
+
+
+    context.fillText(
+
+        "Charlie's portable photobooth ♡",
+
+        width / 2,
+
+        height - 45
+
     );
 
 }
 
 
+/* =====================================================
+   RESET
+===================================================== */
+
+function resetPhotobooth() {
+
+    /*
+       Stop camera.
+    */
+
+    if (cameraStream) {
+
+        cameraStream
+            .getTracks()
+            .forEach(track => {
+
+                track.stop();
+
+            });
+
+        cameraStream = null;
+
+    }
+
+
+    /*
+       Reset photos.
+    */
+
+    photos = [];
+
+    pendingPhoto = null;
+
+    takingPhoto = false;
+
+
+    /*
+       Reset filter.
+    */
+
+    currentFilter =
+        "original";
+
+
+    filterButtons.forEach(
+        button => {
+
+            button.classList.remove(
+                "active"
+            );
+
+        }
+    );
+
+
+    const originalButton =
+        document.querySelector(
+            '.filter-button[data-filter="original"]'
+        );
+
+
+    if (originalButton) {
+
+        originalButton.classList.add(
+            "active"
+        );
+
+    }
+
+
+    /*
+       Close crop editor.
+    */
+
+    cropEditor.style.display =
+        "none";
+
+
+    /*
+       Reset crop.
+    */
+
+    cropZoom = 1;
+
+    cropX = 0;
+
+    cropY = 0;
+
+
+    if (zoomSlider) {
+
+        zoomSlider.value = "1";
+
+    }
+
+
+    /*
+       Reset camera UI.
+    */
+
+    video.srcObject = null;
+
+
+    startButton.disabled =
+        false;
+
+    snapButton.disabled =
+        true;
+
+
+    snapButton.style.display =
+        "";
+
+    resetButton.style.display =
+        "";
+
+
+    snapButton.textContent =
+        "photo 1/4 📸";
+
+
+    status.textContent =
+        "uhm... camera eerst?";
+
+
+    countdown.style.display =
+        "none";
+
+
+    clearError();
+
+
+    updateStrip();
+
+}
+
 
 /* =====================================================
-   EVENT LISTENERS
+   BUTTON EVENTS
 ===================================================== */
 
 startButton.addEventListener(
@@ -939,58 +1720,12 @@ snapButton.addEventListener(
 
 resetButton.addEventListener(
     "click",
-    reset
+    resetPhotobooth
 );
-
-
-downloadButton.addEventListener(
-    "click",
-    downloadStrip
-);
-
-
-
-/*
-   Filter buttons
-*/
-
-filterButtons.forEach(
-    button => {
-
-        button.addEventListener(
-            "click",
-            () => {
-
-                applyFilter(
-                    button.dataset.filter
-                );
-
-            }
-        );
-
-    }
-);
-
 
 
 /* =====================================================
-   CLEANUP
+   INITIAL STATE
 ===================================================== */
 
-window.addEventListener(
-    "beforeunload",
-    () => {
-
-        if (cameraStream) {
-
-            cameraStream
-                .getTracks()
-                .forEach(
-                    track =>
-                        track.stop()
-                );
-
-        }
-
-    }
-);
+updateStrip();
