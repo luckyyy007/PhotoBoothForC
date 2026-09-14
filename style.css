@@ -1,43 +1,62 @@
-/* ==========================================
-   GENERAL
-   ========================================== */
+/* =====================================================
+   SNAPSTRIP
+   Dreamy / Retro / Cute
+===================================================== */
+
+
+/* =========================
+   RESET
+========================= */
 
 * {
     box-sizing: border-box;
 }
 
-html,
-body {
-    margin: 0;
-    padding: 0;
 
-    min-height: 100%;
-
-    font-family: Arial, sans-serif;
-
-    background: #f9f3ef;
-
-    color: #222;
+html {
+    scroll-behavior: smooth;
 }
 
+
 body {
+    margin: 0;
+
+    min-height: 100vh;
+
+    font-family:
+        Inter,
+        ui-sans-serif,
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+
+    background:
+        radial-gradient(
+            circle at 10% 10%,
+            rgba(190, 225, 255, 0.65),
+            transparent 30%
+        ),
+
+        radial-gradient(
+            circle at 90% 20%,
+            rgba(255, 205, 225, 0.6),
+            transparent 30%
+        ),
+
+        #f7f2ec;
+
+    color: #25211e;
+
     overflow-x: hidden;
 }
 
-button,
-input {
-    font: inherit;
-}
-
-button {
-    border: none;
-    cursor: pointer;
-}
 
 
-/* ==========================================
-   BACKGROUND DECORATIONS
-   ========================================== */
+/* =========================
+   BACKGROUND DECORATION
+========================= */
 
 .background-decoration {
     position: fixed;
@@ -46,350 +65,925 @@ button {
 
     pointer-events: none;
 
-    font-size: 32px;
+    user-select: none;
 
-    opacity: 0.25;
+    opacity: 0.45;
+
+    font-family:
+        Georgia,
+        serif;
+
+    animation:
+        floatDecoration 5s ease-in-out infinite;
 }
+
 
 .decoration-one {
-    top: 5%;
-    left: 5%;
+    top: 9%;
+
+    left: 4%;
+
+    color: #9bcff0;
+
+    font-size: 32px;
 }
+
 
 .decoration-two {
-    top: 20%;
+    top: 25%;
+
     right: 5%;
+
+    color: #e9a8c4;
+
+    font-size: 25px;
+
+    animation-delay: 1s;
 }
+
 
 .decoration-three {
-    bottom: 20%;
-    left: 8%;
+    bottom: 12%;
+
+    left: 7%;
+
+    color: #e9a8c4;
+
+    font-size: 24px;
+
+    animation-delay: 2s;
 }
+
 
 .decoration-four {
-    bottom: 5%;
+    bottom: 7%;
+
     right: 8%;
+
+    color: #9bcff0;
+
+    font-size: 30px;
+
+    animation-delay: 3s;
 }
 
 
-/* ==========================================
-   APP
-   ========================================== */
+@keyframes floatDecoration {
+
+    0%,
+    100% {
+        transform:
+            translateY(0)
+            rotate(0deg);
+    }
+
+    50% {
+        transform:
+            translateY(-7px)
+            rotate(4deg);
+    }
+
+}
+
+
+
+/* =========================
+   MAIN APP
+========================= */
 
 .app {
     position: relative;
 
     z-index: 1;
 
-    width: 100%;
+    min-height: 100vh;
 
-    padding: 20px;
+    display: grid;
+
+    place-items: center;
+
+    padding: 28px;
 }
 
-.card {
-    width: 100%;
-    max-width: 1200px;
 
-    margin: 0 auto;
+.card {
+    width: min(1080px, 100%);
+
+    min-height: 680px;
+
+    background:
+        rgba(255, 253, 249, 0.94);
+
+    border:
+        1px solid rgba(225, 215, 205, 0.8);
+
+    border-radius: 28px;
+
+    overflow: hidden;
+
+    box-shadow:
+        0 24px 70px
+        rgba(64, 48, 35, 0.12),
+
+        0 4px 15px
+        rgba(120, 150, 180, 0.06);
 
     display: grid;
 
     grid-template-columns:
-        minmax(0, 1fr)
-        minmax(280px, 380px);
+        1.35fr 0.65fr;
 
-    gap: 30px;
-
-    padding: 30px;
-
-    background: #fff;
-
-    border-radius: 28px;
-
-    box-shadow:
-        0 20px 60px rgba(0, 0, 0, 0.08);
+    backdrop-filter:
+        blur(12px);
 }
 
 
-/* ==========================================
-   LEFT
-   ========================================== */
+
+/* =========================
+   LEFT SIDE
+========================= */
 
 .left {
-    min-width: 0;
+    padding: 34px;
+
+    display: flex;
+
+    flex-direction: column;
 }
+
 
 .branding {
-    margin-bottom: 12px;
+    position: relative;
 }
+
 
 .brand {
-    font-size: 32px;
-    font-weight: 700;
+    font-size: 22px;
+
+    font-weight: 800;
+
+    letter-spacing: -0.04em;
 }
+
 
 .brand span {
-    opacity: 0.5;
+    color: #e6a7c2;
 }
+
 
 .tagline {
-    margin-top: 4px;
+    margin-top: 3px;
 
-    font-size: 14px;
+    color: #8b8178;
 
-    opacity: 0.65;
+    font-size: 13px;
 }
+
 
 .tiny-decoration {
-    margin: 14px 0;
+    margin-top: 28px;
 
-    font-size: 15px;
+    color: #a7cfe8;
 
-    opacity: 0.5;
+    font-family:
+        Georgia,
+        serif;
+
+    font-size: 13px;
+
+    letter-spacing: 0.4em;
+
+    opacity: 0.8;
 }
+
 
 h1 {
-    margin: 0;
+    margin:
+        12px 0 14px;
 
-    font-size: clamp(32px, 6vw, 52px);
+    max-width: 600px;
 
-    line-height: 1.05;
+    font-size:
+        clamp(34px, 5vw, 58px);
+
+    line-height: 0.95;
+
+    letter-spacing: -0.055em;
 }
+
 
 h1 span {
-    opacity: 0.6;
+    color: #d98eae;
+
+    font-family:
+        Georgia,
+        "Times New Roman",
+        serif;
+
+    font-style: italic;
+
+    font-weight: 500;
 }
+
 
 .intro {
-    margin: 18px 0 22px;
+    max-width: 540px;
 
-    line-height: 1.5;
+    margin:
+        0 0 26px;
 
-    opacity: 0.7;
+    color: #766d66;
+
+    line-height: 1.6;
 }
 
 
-/* ==========================================
+
+/* =========================
    CAMERA
-   ========================================== */
+========================= */
 
 .camera-container {
     position: relative;
 
     width: 100%;
 
-    aspect-ratio: 9 / 16;
+    aspect-ratio: 4 / 3;
+
+    max-height: 470px;
 
     overflow: hidden;
 
-    background: #eeeeee;
+    border-radius: 22px;
 
-    border-radius: 20px;
+    background: #191715;
+
+    display: grid;
+
+    place-items: center;
+
+    box-shadow:
+        0 12px 30px
+        rgba(50, 40, 30, 0.12);
+
+    border:
+        3px solid rgba(255, 255, 255, 0.7);
 }
 
-.camera-container video {
-    display: block;
 
+video {
     width: 100%;
+
     height: 100%;
 
     object-fit: cover;
+
+   object-position: center center;
+
+    /* selfie preview is mirrored */
+
+    transform:
+        scaleX(-1);
 }
+
 
 #photoCanvas {
     display: none;
 }
 
 
-/* ==========================================
-   CAMERA DECORATION
-   ========================================== */
+
+/* =========================
+   CAMERA DECORATIONS
+========================= */
 
 .camera-corner {
     position: absolute;
 
-    z-index: 2;
+    z-index: 3;
 
-    font-size: 25px;
+    pointer-events: none;
 
-    color: white;
+    font-family:
+        Georgia,
+        serif;
 
-    text-shadow:
-        0 2px 8px rgba(0, 0, 0, 0.25);
+    font-size: 20px;
+
+    opacity: 0.8;
 }
+
 
 .camera-corner-top {
-    top: 14px;
-    left: 14px;
+    top: 13px;
+
+    right: 15px;
+
+    color: #f3b2ca;
 }
+
 
 .camera-corner-bottom {
-    right: 14px;
-    bottom: 14px;
+    bottom: 50px;
+
+    right: 15px;
+
+    color: #b4ddf4;
 }
 
 
-/* ==========================================
+
+/* =========================
    COUNTDOWN
-   ========================================== */
+========================= */
 
 .countdown {
     position: absolute;
 
     inset: 0;
 
-    z-index: 5;
-
     display: none;
 
-    align-items: center;
-    justify-content: center;
-
-    font-size: 80px;
-    font-weight: 700;
+    place-items: center;
 
     color: white;
 
-    text-shadow:
-        0 3px 15px rgba(0, 0, 0, 0.3);
+    font-size: 110px;
+
+    font-weight: 800;
 
     background:
-        rgba(0, 0, 0, 0.08);
+        rgba(0, 0, 0, 0.15);
+
+    text-shadow:
+        0 4px 30px
+        rgba(0, 0, 0, 0.4);
 }
 
 
-/* ==========================================
-   STATUS + ERROR
-   ========================================== */
+
+/* =========================
+   CAMERA STATUS
+========================= */
 
 .status {
-    margin-top: 10px;
+    position: absolute;
 
-    text-align: center;
+    left: 16px;
 
-    font-size: 14px;
+    bottom: 16px;
 
-    opacity: 0.65;
+    padding:
+        8px 11px;
+
+    border-radius: 999px;
+
+    color: white;
+
+    background:
+        rgba(0, 0, 0, 0.45);
+
+    backdrop-filter:
+        blur(10px);
+
+    font-size: 12px;
 }
+
+
+
+/* =========================
+   ERROR
+========================= */
 
 .error {
-    margin-top: 10px;
+    display: none;
 
-    color: #b44;
+    margin-top: 12px;
 
-    text-align: center;
+    padding:
+        10px 13px;
 
-    font-size: 14px;
+    border-radius: 12px;
+
+    color: #9a3c32;
+
+    background: #f8e2de;
+
+    font-size: 13px;
 }
 
 
-/* ==========================================
+
+/* =========================
    BUTTONS
-   ========================================== */
+========================= */
 
 .controls {
     display: flex;
 
     gap: 10px;
 
-    margin-top: 16px;
-
     flex-wrap: wrap;
+
+    margin-top: 16px;
 }
 
-.button {
-    min-height: 46px;
 
-    padding: 12px 18px;
+.button {
+    border: 0;
 
     border-radius: 999px;
 
+    padding:
+        13px 18px;
+
+    font: inherit;
+
+    font-weight: 700;
+
+    cursor: pointer;
+
     transition:
-        transform 0.15s ease,
-        opacity 0.15s ease;
+        transform 0.2s ease,
+        opacity 0.2s ease,
+        background 0.2s ease,
+        box-shadow 0.2s ease;
 }
 
-.button:hover {
-    transform: translateY(-1px);
+
+.button:hover:not(:disabled) {
+    transform:
+        translateY(-2px);
+
+    box-shadow:
+        0 7px 18px
+        rgba(70, 55, 45, 0.12);
 }
 
-.button:active {
-    transform: scale(0.98);
+
+.button:active:not(:disabled) {
+    transform:
+        translateY(0);
 }
+
 
 .button:disabled {
-    cursor: not-allowed;
-
     opacity: 0.4;
+
+    cursor: not-allowed;
 
     transform: none;
 }
 
+
 .primary {
-    background: #222;
+    background: #25211e;
 
     color: white;
 }
 
-.secondary {
-    background: #eeeeee;
 
-    color: #222;
+.primary:hover:not(:disabled) {
+    background: #3b3530;
 }
 
 
-/* ==========================================
-   CROP EDITOR
-   ========================================== */
+.secondary {
+    background: #eee7df;
 
-.crop-editor {
-    display: none;
+    color: #332e29;
+}
+
+
+
+/* =========================
+   RIGHT SIDE
+========================= */
+
+.right {
+    position: relative;
+
+    padding: 34px;
+
+    background:
+        linear-gradient(
+            145deg,
+            #edf8ff 0%,
+            #f8eef4 55%,
+            #eee7df 100%
+        );
+
+    border-left:
+        1px solid #e0d7cc;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+}
+
+
+.right-decoration {
+    position: absolute;
+
+    top: 22px;
+
+    right: 28px;
+
+    color: #e2a8c1;
+
+    font-family:
+        Georgia,
+        serif;
+
+    font-size: 22px;
+
+    opacity: 0.75;
+}
+
+
+.right h2 {
+    margin:
+        0 0 18px;
+
+    font-size: 16px;
+
+    letter-spacing: 0.02em;
+}
+
+
+
+/* =========================
+   STRIP
+========================= */
+
+.strip-wrapper {
+    min-height: 470px;
+
+    display: grid;
+
+    place-items: center;
+}
+
+
+.strip {
+    width: 190px;
+
+    padding:
+        10px 10px 18px;
+
+    background: white;
+
+    box-shadow:
+        0 18px 40px
+        rgba(40, 30, 20, 0.18);
+
+    transform:
+        rotate(1.5deg);
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 8px;
+
+    transition:
+        transform 0.3s ease;
+}
+
+
+.strip:hover {
+    transform:
+        rotate(0deg)
+        translateY(-3px);
+}
+
+
+.strip img {
+    display: block;
 
     width: 100%;
 
-    margin-top: 20px;
+    aspect-ratio: 4 / 3;
+
+    object-fit: cover;
+
+    background: #ddd;
+
+    transition:
+        filter 0.25s ease;
 }
 
-.crop-header {
-    margin-bottom: 12px;
+
+.empty-photo {
+    width: 100%;
+
+    aspect-ratio: 4 / 3;
+
+    background: #eeeae5;
+
+    display: grid;
+
+    place-items: center;
+
+    color: #aaa39c;
+
+    font-size: 11px;
+}
+
+
+.strip-label {
+    margin-top: 3px;
+
+    text-align: center;
+
+    color: #77706a;
+
+    font-size: 10px;
+
+    letter-spacing: 0.18em;
+
+    text-transform: uppercase;
+}
+
+
+
+/* =========================
+   FILTERS
+========================= */
+
+.filters {
+    width: 100%;
+
+    margin-bottom: 16px;
+
+    opacity: 0.4;
+
+    pointer-events: none;
+
+    transition:
+        opacity 0.25s ease;
+}
+
+
+.filters.ready {
+    opacity: 1;
+
+    pointer-events: auto;
+}
+
+
+.filter-title {
+    margin:
+        0 0 8px;
+
+    text-align: center;
+
+    color: #77706a;
+
+    font-size: 12px;
+
+    font-weight: 700;
+}
+
+
+.filter-buttons {
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    gap: 6px;
+
+    flex-wrap: wrap;
+}
+
+
+.filter-button {
+    border: 1px solid #d8cfc5;
+
+    background:
+        rgba(248, 244, 239, 0.85);
+
+    color: #655d56;
+
+    border-radius: 999px;
+
+    padding:
+        7px 10px;
+
+    font-size: 11px;
+
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        color 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.2s ease;
+}
+
+
+.filter-button:hover {
+    transform:
+        translateY(-1px);
+
+    background: #e9e1d8;
+}
+
+
+.filter-button.active {
+    background: #25211e;
+
+    border-color: #25211e;
+
+    color: white;
+}
+
+
+
+/* =========================
+   DOWNLOAD
+========================= */
+
+.download-button {
+    width: 100%;
+}
+
+
+.privacy-note {
+    margin-top: 12px;
+
+    color: #847a71;
+
+    font-size: 12px;
+
+    line-height: 1.5;
 
     text-align: center;
 }
 
-.crop-header h3 {
-    margin: 0;
 
+
+/* =========================
+   MOBILE
+========================= */
+
+@media (max-width: 820px) {
+
+    .app {
+        padding: 14px;
+    }
+
+
+    .card {
+        grid-template-columns: 1fr;
+
+        border-radius: 22px;
+    }
+
+
+    .left {
+        padding: 24px;
+    }
+
+
+    .right {
+        padding:
+            34px 24px;
+
+        border-left: 0;
+
+        border-top:
+            1px solid #e0d7cc;
+    }
+
+
+    h1 {
+        margin-top: 12px;
+    }
+
+
+    .strip-wrapper {
+        min-height: 390px;
+    }
+
+
+    .strip {
+        width: 175px;
+    }
+
+
+    .background-decoration {
+        opacity: 0.25;
+    }
+
+}
+
+
+
+/* =========================
+   SMALL PHONES
+========================= */
+
+@media (max-width: 480px) {
+
+    .app {
+        padding: 0;
+    }
+
+
+    .card {
+        width: 100%;
+
+        min-height: 100vh;
+
+        border: 0;
+
+        border-radius: 0;
+    }
+
+
+    .left {
+        padding: 20px;
+    }
+
+
+    .right {
+        padding:
+            28px 20px;
+    }
+
+
+    h1 {
+        font-size: 42px;
+    }
+
+
+    .controls {
+        flex-direction: column;
+    }
+
+
+    .controls .button {
+        width: 100%;
+    }
+
+
+    .filter-button {
+        padding:
+            7px 9px;
+
+        font-size: 10px;
+    }
+
+}
+
+
+/* =====================================================
+   CROP EDITOR
+===================================================== */
+
+.crop-editor {
+    display: none;
+    margin-top: 20px;
+    width: 100%;
+}
+
+.crop-editor.active {
+    display: block;
+}
+
+.crop-header {
+    text-align: center;
+    margin-bottom: 12px;
+}
+
+.crop-header h3 {
+    margin: 0 0 5px;
     font-size: 20px;
 }
 
 .crop-header p {
-    margin: 5px 0 0;
-
+    margin: 0;
     font-size: 13px;
-
-    opacity: 0.65;
+    opacity: 0.7;
 }
-
-
-/* ==========================================
-   9:16 CROP AREA
-   ========================================== */
 
 .crop-area {
     position: relative;
-
     width: 100%;
-
-    aspect-ratio: 9 / 16;
-
+    aspect-ratio: 4 / 3;
     overflow: hidden;
-
-    background: #eeeeee;
-
-    border-radius: 18px;
-
+    background: #eee;
+    border-radius: 14px;
     cursor: grab;
-
     touch-action: none;
 }
 
@@ -397,68 +991,18 @@ h1 span {
     cursor: grabbing;
 }
 
-
-/* ==========================================
-   CROP IMAGE
-   ========================================== */
-
 .crop-area img {
     position: absolute;
-
-    display: block;
-
     max-width: none;
-    max-height: none;
-
     user-select: none;
-
     -webkit-user-drag: none;
-
     pointer-events: none;
 }
 
-
-/* ==========================================
-   ZOOM
-   ========================================== */
-
-.zoom-control {
-    display: flex;
-
-    align-items: center;
-
-    gap: 10px;
-
-    margin: 12px 0;
-}
-
-.zoom-control span {
-    flex-shrink: 0;
-
-    font-size: 22px;
-
-    line-height: 1;
-}
-
-.zoom-control input {
-    width: 100%;
-
-    flex: 1;
-
-    cursor: pointer;
-}
-
-
-/* ==========================================
-   CROP BUTTONS
-   ========================================== */
-
 .crop-controls {
     display: flex;
-
     gap: 10px;
-
-    width: 100%;
+    margin-top: 12px;
 }
 
 .crop-controls .button {
@@ -466,257 +1010,23 @@ h1 span {
 }
 
 
-/* ==========================================
-   RIGHT SIDE
-   ========================================== */
+/* =====================================================
+   ZOOM CONTROL
+===================================================== */
 
-.right {
+.zoom-control {
     display: flex;
-
-    flex-direction: column;
-
     align-items: center;
-
-    min-width: 0;
+    gap: 10px;
+    margin: 12px 0;
 }
 
-.right-decoration {
-    align-self: flex-end;
-
-    font-size: 24px;
-
-    opacity: 0.4;
+.zoom-control span {
+    font-size: 22px;
+    line-height: 1;
 }
 
-.right h2 {
-    width: 100%;
-
-    margin: 0 0 18px;
-
-    text-align: center;
-}
-
-
-/* ==========================================
-   PHOTO STRIP
-   ========================================== */
-
-.strip-wrapper {
-    width: 100%;
-
-    display: flex;
-
-    justify-content: center;
-
-    overflow: hidden;
-}
-
-.strip {
-    width: 180px;
-
-    padding: 10px;
-
-    background: white;
-
-    box-shadow:
-        0 10px 30px rgba(0, 0, 0, 0.12);
-}
-
-.empty-photo {
-    width: 100%;
-
-    aspect-ratio: 9 / 16;
-
-    display: flex;
-
-    align-items: center;
-    justify-content: center;
-
-    margin-bottom: 6px;
-
-    background: #eeeeee;
-
-    font-size: 10px;
-
-    color: #999;
-}
-
-.strip-photo {
-    display: block;
-
-    width: 100%;
-
-    aspect-ratio: 9 / 16;
-
-    object-fit: cover;
-
-    margin-bottom: 6px;
-}
-
-.strip-label {
-    width: 100%;
-
-    padding: 14px 5px 8px;
-
-    text-align: center;
-
-    font-size: 10px;
-
-    line-height: 1.3;
-}
-
-
-/* ==========================================
-   FILTERS
-   ========================================== */
-
-.filters {
-    width: 100%;
-
-    margin-top: 20px;
-}
-
-.filter-title {
-    margin: 0 0 10px;
-
-    text-align: center;
-
-    font-size: 14px;
-
-    opacity: 0.65;
-}
-
-.filter-buttons {
-    display: flex;
-
-    justify-content: center;
-
-    flex-wrap: wrap;
-
-    gap: 7px;
-}
-
-.filter-button {
-    padding: 8px 12px;
-
-    border-radius: 999px;
-
-    background: #eeeeee;
-
-    color: #222;
-
-    font-size: 12px;
-}
-
-.filter-button.active {
-    background: #222;
-
-    color: white;
-}
-
-
-/* ==========================================
-   DOWNLOAD
-   ========================================== */
-
-.download-button {
-    width: 100%;
-
-    margin-top: 18px;
-}
-
-.privacy-note {
-    margin: 12px 0 0;
-
-    text-align: center;
-
-    font-size: 11px;
-
-    line-height: 1.5;
-
-    opacity: 0.55;
-}
-
-
-/* ==========================================
-   MOBILE
-   ========================================== */
-
-@media (max-width: 700px) {
-
-    body {
-        background: #f9f3ef;
-    }
-
-    .app {
-        padding: 10px;
-    }
-
-    .card {
-        display: block;
-
-        padding: 18px;
-
-        border-radius: 22px;
-    }
-
-    .right {
-        margin-top: 35px;
-    }
-
-    h1 {
-        font-size: 36px;
-    }
-
-    .camera-container {
-        aspect-ratio: 9 / 16;
-
-        max-height: 75vh;
-    }
-
-    .crop-area {
-        aspect-ratio: 9 / 16;
-
-        max-height: 70vh;
-    }
-
-    .controls {
-        flex-direction: column;
-    }
-
-    .controls .button {
-        width: 100%;
-    }
-
-    .crop-controls {
-        flex-direction: column;
-    }
-
-    .crop-controls .button {
-        width: 100%;
-    }
-
-    .strip {
-        width: 170px;
-    }
-}
-
-
-/* ==========================================
-   VERY SMALL PHONES
-   ========================================== */
-
-@media (max-width: 380px) {
-
-    .card {
-        padding: 14px;
-    }
-
-    h1 {
-        font-size: 31px;
-    }
-
-    .strip {
-        width: 150px;
-    }
+.zoom-control input {
+    flex: 1;
+    cursor: pointer;
 }
