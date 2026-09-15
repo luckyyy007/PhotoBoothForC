@@ -1308,3 +1308,61 @@ body.dark-mode .download-toast {
     background: #f3eee9;
     color: #25211e;
 }
+
+
+/* CAMERA SWITCH */
+
+.camera-container {
+   position: relative;
+}
+
+.camera-switch {
+   position: absolute;
+   top: 14px;
+   left: 14px;
+
+   width: 40px;
+   height:40px;
+
+   padding: 0;
+
+   display: flex;
+   align-items: center;
+   justify-content: center;
+
+   border: none;
+   border-radius: 50%;
+
+   background: rgba(0, 0, 0, 0.55);
+   color: white;
+
+   font-size: 24px;
+   line-height: 1;
+
+   cursor: pointer;
+
+   z-index: 20;
+
+   backdrop-filter: blur(8px);
+   -webkit-backdrop-filter: blur(8px);
+
+   transition: 
+      transform 0.15s ease,
+      background 0.15s ease;
+}
+
+.camera-swtich:hover:not(:disabled) {
+   transform: scale(1.08);
+   background: rgba(0, 0, 0, 0.7);
+}
+
+.camera-switch:active:not(:disabled) {
+   transform: scale(0.92);
+}
+
+.camera-swtich:disabled {
+   opacity: 0.35s;
+   cursor: default;
+}
+
+      
