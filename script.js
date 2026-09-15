@@ -27,6 +27,8 @@ const stripColorButtons = document.querySelectorAll(".strip-color-button");
 
 const downloadToast = document.getElementById("downloadToast");
 
+const switchCameraButton = document.getElementById("switchCamera");
+
 /* =====================================================
    CROP EDITOR
 ===================================================== */
@@ -56,6 +58,10 @@ let currentFilters = ["original"];
 let currentStripColor = "b&w";
 
 let pendingPhoto = null;
+
+let cameraStream = null;
+
+let currentFacingMode = "user";
 
 
 /* CROP STATE */
@@ -245,7 +251,7 @@ async function startCamera() {
 
                 video: {
 
-                    facingMode: "user",
+                    facingMode: currentFacingMode,
 
                     width: {
                         ideal: 1280
@@ -290,6 +296,21 @@ async function startCamera() {
     }
 
 }
+
+/* =====================================================
+   SWITCH CAMERA
+===================================================== */
+
+switchCameraButton.addEventListener("click", async () => {
+
+   currentFacingMode =
+      currentFacingMode == "user"
+         ? "environment"
+         : "user";
+
+   await startCamera();
+});
+
 
 
 /* =====================================================
