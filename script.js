@@ -59,8 +59,6 @@ let currentStripColor = "b&w";
 
 let pendingPhoto = null;
 
-let cameraStream = null;
-
 let currentFacingMode = "user";
 
 
