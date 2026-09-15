@@ -421,12 +421,15 @@ async function takePhoto() {
 
     context.save();
 
-    context.translate(
-        canvas.width,
-        0
-    );
-
-    context.scale(-1, 1);
+    if (currentFacingMode == "user") {
+      context.translate(
+         canvas.width,
+         0
+      );
+         
+      context.scale(-1, 1);
+    }
+       
 
     context.drawImage(
         video,
@@ -1736,7 +1739,7 @@ resetButton.addEventListener(
     resetPhotobooth
 );
 
-if (swtichCameraButton) {
+if (switchCameraButton) {
    switchCameraButton.addEventListener("click", async () => {
 
       if (!cameraStream || takingPhoto) {
