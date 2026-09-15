@@ -227,59 +227,55 @@ function updateStrip() {
 ===================================================== */
 
 async function startCamera() {
-
     clearError();
 
     try {
-
         if (
             !navigator.mediaDevices ||
             !navigator.mediaDevices.getUserMedia
         ) {
-
-            throw new Error(
-                "Camera access is not supported."
-            );
-
+            throw new Error("Camera access is not supported.");
         }
 
+        // Stop de vorige camera voordat we een nieuwe openen
+        if (cameraStream) {
+            cameraStream.getTracks().forEach(track => track.stop());
+            cameraStream = null;
+        }
 
-        cameraStream =
-            await navigator.mediaDevices.getUserMedia({
-
-                video: {
-
-                    facingMode: currentFacingMode,
-
-                    width: {
-                        ideal: 1280
-                    },
-
-                    height: {
-                        ideal: 960
-                    }
-
+        cameraStream = await navigator.mediaDevices.getUserMedia({
+            video: {
+                facingMode: currentFacingMode,
+                width: {
+                    ideal: 1280
                 },
-
-                audio: false
-
-            });
-
+                height: {
+                    ideal: 960
+                }
+            },
+            audio: false
+        });
 
         video.srcObject = cameraStream;
 
+        // Front camera = gespiegeld
+        // Achtercamera = normaal
+        if (currentFacingMode === "user") {
+            video.style.transform = "scaleX(-1)";
+        } else {
+            video.style.transform = "scaleX(1)";
+        }
 
-        status.textContent =
-            "camera ready ♡";
-
+        status.textContent = "camera ready ♡";
 
         startButton.disabled = true;
-
         snapButton.disabled = false;
 
+        if (switchCameraButton) {
+            switchCameraButton.disabled = false;
+        }
 
     } catch (err) {
-
         console.error(err);
 
         showError(
@@ -288,27 +284,16 @@ async function startCamera() {
             "and use HTTPS or localhost."
         );
 
-        status.textContent =
-            "camera unavailable";
+        status.textContent = "camera unavailable";
 
+        startButton.disabled = false;
+        snapButton.disabled = true;
+
+        if (switchCameraButton) {
+            switchCameraButton.disabled = true;
+        }
     }
-
 }
-
-/* =====================================================
-   SWITCH CAMERA
-===================================================== */
-
-switchCameraButton.addEventListener("click", async () => {
-
-   currentFacingMode =
-      currentFacingMode == "user"
-         ? "environment"
-         : "user";
-
-   await startCamera();
-});
-
 
 
 /* =====================================================
@@ -1750,6 +1735,22 @@ resetButton.addEventListener(
     "click",
     resetPhotobooth
 );
+
+if (swtichCameraButton) {
+   switchCameraButton.addEventListener("click", async () => {
+
+      if (!cameraStream || takingPhoto) {
+         return;
+      }
+
+      currentFacingMode =
+         currentFacingMode == "user"
+            ? "environment"
+            : "user";
+
+      await startCamera();
+   });
+}
 
 
 /* =====================================================
