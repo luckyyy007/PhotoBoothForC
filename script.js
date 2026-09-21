@@ -42,6 +42,8 @@ const cropCancel = document.getElementById("cropCancel");
 
 const zoomSlider = document.getElementById("zoomSlider");
 
+const galleryButton = document.getElementById("galleryButton");
+const galleryInput = document.getElementById("galleryInput");
 
 /* =====================================================
    STATE
@@ -524,6 +526,11 @@ function openCropEditor() {
 
     resetButton.style.display =
         "none";
+
+   if (galleryButton) {
+      galleryButton.style.display = "none";
+   }
+   
 
 
     /*
@@ -1184,6 +1191,11 @@ function confirmCrop() {
     resetButton.style.display =
         "";
 
+   if (galleryButton) {
+      galleryButton.style.display = "";
+   }
+   
+
 
     /*
        Update interface.
@@ -1714,6 +1726,94 @@ function resetPhotobooth() {
 
 
     updateStrip();
+
+}
+
+
+/* =====================================================
+   GALLERY PHOTO
+===================================================== */
+
+if (galleryButton && galleryInput) {
+
+    galleryButton.addEventListener(
+        "click",
+        () => {
+
+            if (photos.length >= 4 || takingPhoto) {
+                return;
+            }
+
+            galleryInput.click();
+
+        }
+    );
+
+
+    galleryInput.addEventListener(
+        "change",
+        event => {
+
+            const file =
+                event.target.files[0];
+
+            if (!file) {
+                return;
+            }
+
+            if (photos.length >= 4) {
+                return;
+            }
+
+            if (!file.type.startsWith("image/")) {
+
+                showError(
+                    "Kies alsjeblieft een foto ♡"
+                );
+
+                return;
+            }
+
+
+            const reader =
+                new FileReader();
+
+
+            reader.onload = () => {
+
+                pendingPhoto =
+                    reader.result;
+
+                takingPhoto = true;
+
+                status.textContent =
+                    "kies welk stukje je wilt ♡";
+
+                openCropEditor();
+
+            };
+
+
+            reader.onerror = () => {
+
+                showError(
+                    "Oeps, deze foto kon niet worden geopend."
+                );
+
+            };
+
+
+            reader.readAsDataURL(file);
+
+            /*
+             * Reset input so the same photo
+             * can be selected again later.
+             */
+
+            galleryInput.value = "";
+
+        }
+    );
 
 }
 
